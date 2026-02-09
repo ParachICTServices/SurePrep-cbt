@@ -6,7 +6,7 @@ import { LayoutDashboard, BookOpen, User, LogOut, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 import { auth } from "@/app/lib/firebase";
 import { signOut } from "firebase/auth";
-import AdminSeeder from "../components/AdminSeeder";
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -76,7 +76,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
-      <AdminSeeder />
+   
     </div>
   );
 }
