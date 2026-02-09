@@ -73,7 +73,7 @@ export default function ExamInterface() {
 
   // 4. Submit & Grade (Updated with Firebase Save)
   const handleSubmit = async () => {
-    // Calculate Score locally first
+    
     let newScore = 0;
     questions.forEach((q, index) => {
       if (selectedOptions[index] === q.correctOption) {
@@ -81,12 +81,11 @@ export default function ExamInterface() {
       }
     });
     
-    // Update UI immediately
+    
     setScore(newScore);
     setSubmitted(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Save to Database
     if (user) {
       try {
         await addDoc(collection(db, "testResults"), {
@@ -96,8 +95,17 @@ export default function ExamInterface() {
           totalQuestions: questions.length,
           percentage: Math.round((newScore / questions.length) * 100),
           date: serverTimestamp(),
+          
+          // 👇 NEW: Save the exam snapshot for review
+          history: questions.map((q, index) => ({
+            questionText: q.questionText,
+            options: q.options,
+            correctOption: q.correctOption,
+            selectedOption: selectedOptions[index] ?? -1, // -1 if skipped
+            explanation: q.explanation || "No explanation provided."
+          }))
         });
-        console.log("Score saved successfully");
+        console.log("Score and details saved successfully");
       } catch (error) {
         console.error("Error saving score:", error);
       }

@@ -17,7 +17,7 @@ export default function DashboardOverview() {
       if (!user) return;
 
       try {
-        // 1. Fetch Recent Results (Last 5)
+        
         const q = query(
           collection(db, "testResults"),
           where("userId", "==", user.uid),
@@ -30,7 +30,7 @@ export default function DashboardOverview() {
            const data = doc.data();
            // Convert Firestore Timestamp to readable date
            const date = data.date ? new Date(data.date.seconds * 1000).toLocaleDateString() : 'Just now';
-           return { ...data, date };
+           return {id: doc.id, ...data, date };
         });
         
         setRecentActivity(results);
@@ -116,6 +116,7 @@ export default function DashboardOverview() {
       {/* 3. Recent Activity List */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+          
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-bold text-lg text-slate-900 flex items-center gap-2">
               <Activity size={20} className="text-slate-400" /> Recent Activity
@@ -125,7 +126,8 @@ export default function DashboardOverview() {
           {recentActivity.length > 0 ? (
             <div className="space-y-4">
               {recentActivity.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <Link href={`/dashboard/result/${item.id}`} key={idx} className="block hover:bg-slate-50 transition">
+                <div  className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <div>
                     <span className="block font-bold text-slate-700 capitalize">{item.subject}</span>
                     <span className="text-xs text-slate-500">{item.date}</span>
@@ -137,6 +139,7 @@ export default function DashboardOverview() {
                     </span>
                   </div>
                 </div>
+                </Link>
               ))}
             </div>
           ) : (

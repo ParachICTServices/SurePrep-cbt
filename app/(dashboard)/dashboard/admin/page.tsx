@@ -1,9 +1,9 @@
 "use client";
 import { useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/context/AuthContext";
 import { Save, PlusCircle, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { addDoc, collection, serverTimestamp, setDoc, doc } from "firebase/firestore"; 
 
 export default function AdminPanel() {
   const { user } = useAuth();
@@ -16,12 +16,12 @@ export default function AdminPanel() {
   const [correctOption, setCorrectOption] = useState(0); // 0 = A, 1 = B...
   const [explanation, setExplanation] = useState("");
   
-  // Security Check (Simple version)
-  // In a real app, you would check user.role === 'admin' from Firestore
-  // For now, replace this email with your actual login email
-  const ADMIN_EMAIL = "afehbugeorge@gmail.com"; 
+  
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
+  .split(",")
+  .map(email => email.trim().toLowerCase());
 
-  if (!user || user.email !== ADMIN_EMAIL) {
+  if (!user || !ADMIN_EMAILS.includes(user.email?.toLowerCase() || "")) {
     return (
       <div className="p-10 text-center text-red-600 bg-red-50 rounded-xl border border-red-100">
         <AlertCircle className="mx-auto mb-2" size={40} />
@@ -41,35 +41,43 @@ export default function AdminPanel() {
     e.preventDefault();
     setLoading(true);
 
-    try {
-      // 1. Validate
+   try {
+
       if (!subject || !questionText || options.some(opt => opt === "")) {
         alert("Please fill in all fields");
         setLoading(false);
         return;
       }
 
-      // 2. Add to Firestore
+      const subjectId = subject.toLowerCase().replace(/\s+/g, '-'); 
+
+    
       await addDoc(collection(db, "questions"), {
-        subject: subject.toLowerCase().replace(/\s+/g, '-'), // "Nursing Exam" -> "nursing-exam"
-        subjectTitle: subject, // Keep readable title
+        subject: subjectId, 
+        subjectTitle: subject, 
         questionText,
         options,
         correctOption: Number(correctOption),
         explanation,
         createdAt: serverTimestamp(),
-        createdBy: user.email
       });
 
-      // 3. Reset Form
+   
+      await setDoc(doc(db, "subjects", subjectId), {
+        id: subjectId,
+        name: subject,
+        icon: "BookOpen", 
+        color: "bg-emerald-100 text-emerald-600" 
+      });
+
+   
       setQuestionText("");
       setOptions(["", "", "", ""]);
       setExplanation("");
-      // We keep the subject the same so you can fast-add multiple questions for one exam
       
-      alert("Question Saved Successfully! Add another?");
-
-    } catch (error) {
+      alert(`Saved! '${subject}' is now live.`);
+    }
+      catch (error) {
       console.error("Error adding question:", error);
       alert("Error saving question.");
     } finally {

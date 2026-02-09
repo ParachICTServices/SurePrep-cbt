@@ -30,7 +30,6 @@ export default function UpgradeButton() {
         ]
       },
       onSuccess: async (transaction: any) => {
-        // Optimistic UI update (In production, verify this via Webhook on backend for security)
         try {
           const userRef = doc(db, "users", user.uid);
           await updateDoc(userRef, {

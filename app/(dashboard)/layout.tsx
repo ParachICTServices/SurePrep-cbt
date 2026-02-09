@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="h-16 flex items-center px-6 border-b border-slate-100">
-          <span className="text-xl font-bold text-emerald-600">SoEffective</span>
+          <span className="text-xl font-bold text-emerald-600">PARACH</span>
         </div>
 
         <nav className="p-4 space-y-2">
@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:hidden">
-          <span className="font-bold text-emerald-600">SoEffective</span>
+          <span className="font-bold text-emerald-600">PARACH</span>
           <button onClick={() => setSidebarOpen(true)}>
             <Menu size={24} className="text-slate-600" />
           </button>

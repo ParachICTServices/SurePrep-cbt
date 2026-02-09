@@ -1,2 +1,21 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Cabinet Grotesk Variable';
+  src: url('/CabinetGrotesk-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-cabinet-grotesk: 'Cabinet Grotesk Variable', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+@theme {
+  --font-family-cabinet-grotesk: var(--font-cabinet-grotesk);
+}
+
+@utility font-cabinet-grotesk {
+  font-family: var(--font-cabinet-grotesk);
+}
