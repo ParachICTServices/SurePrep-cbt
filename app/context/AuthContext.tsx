@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/app/lib/firebase';
 import { UserData } from '@/app/type';
 
@@ -23,14 +23,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(currentUser);
       
       if (currentUser) {
-        // Fetch custom data (Free/Premium status)
+       
         const docRef = doc(db, "users", currentUser.uid);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {
-          setUserData(docSnap.data() as UserData);
+          const rawData = docSnap.data();
+       
+          const processedData: UserData = {
+            uid: currentUser.uid,
+            email: currentUser.email || null,
+            displayName: currentUser.displayName || null,
+            subscriptionStatus: rawData.subscriptionStatus || 'free',
+            subscriptionExpiry: rawData.subscriptionExpiry instanceof Timestamp ? rawData.subscriptionExpiry.toMillis() : rawData.subscriptionExpiry,
+          };
+          setUserData(processedData);
         } else {
-            // Initialize new user in DB if they don't exist
+  
         }
       } else {
         setUserData(null);
