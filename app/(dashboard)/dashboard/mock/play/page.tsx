@@ -4,18 +4,19 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, limit } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/context/AuthContext";
-import { Loader2, Timer, AlertTriangle } from "lucide-react";
+import { Loader2, Timer, AlertTriangle, Calculator, X } from "lucide-react";
 import React from "react";
 import { formatFirebaseDate } from "@/app/lib/dateUtils";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
 function MockExamContent() {
   const searchParams = useSearchParams();
-  const subsParam = searchParams.get("subs"); // "english,maths,physics,chem"
+  const subsParam = searchParams.get("subs"); 
   const { user } = useAuth();
   const router = useRouter();
 
-  // State
+
   const [subjects, setSubjects] = useState<string[]>([]);
   const [allQuestions, setAllQuestions] = useState<Record<string, any[]>>({});
   const [activeSubject, setActiveSubject] = useState<string>("");
@@ -25,7 +26,14 @@ function MockExamContent() {
   const [timeLeft, setTimeLeft] = useState(120 * 60);
   const [submitted, setSubmitted] = useState(false);
 
-  // 1. Initialize & Fetch
+
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calcDisplay, setCalcDisplay] = useState("0");
+  const [calcPrevValue, setCalcPrevValue] = useState<number | null>(null);
+  const [calcOperation, setCalcOperation] = useState<string | null>(null);
+  const [calcNewNumber, setCalcNewNumber] = useState(true);
+
+
   useEffect(() => {
     if (!subsParam) return;
     const subList = subsParam.split(",");
@@ -114,6 +122,75 @@ function MockExamContent() {
     }
   };
 
+  // Calculator functions
+  const handleCalcNumber = (num: string) => {
+    if (calcNewNumber) {
+      setCalcDisplay(num);
+      setCalcNewNumber(false);
+    } else {
+      setCalcDisplay(calcDisplay === "0" ? num : calcDisplay + num);
+    }
+  };
+
+  const handleCalcOperation = (op: string) => {
+    const currentValue = parseFloat(calcDisplay);
+    
+    if (calcPrevValue !== null && calcOperation && !calcNewNumber) {
+      const result = calculateResult(calcPrevValue, currentValue, calcOperation);
+      setCalcDisplay(String(result));
+      setCalcPrevValue(result);
+    } else {
+      setCalcPrevValue(currentValue);
+    }
+    
+    setCalcOperation(op);
+    setCalcNewNumber(true);
+  };
+
+  const handleCalcEquals = () => {
+    if (calcPrevValue !== null && calcOperation) {
+      const currentValue = parseFloat(calcDisplay);
+      const result = calculateResult(calcPrevValue, currentValue, calcOperation);
+      setCalcDisplay(String(result));
+      setCalcPrevValue(null);
+      setCalcOperation(null);
+      setCalcNewNumber(true);
+    }
+  };
+
+  const calculateResult = (prev: number, current: number, op: string): number => {
+    switch (op) {
+      case "+": return prev + current;
+      case "-": return prev - current;
+      case "×": return prev * current;
+      case "÷": return current !== 0 ? prev / current : 0;
+      default: return current;
+    }
+  };
+
+  const handleCalcClear = () => {
+    setCalcDisplay("0");
+    setCalcPrevValue(null);
+    setCalcOperation(null);
+    setCalcNewNumber(true);
+  };
+
+  const handleCalcDecimal = () => {
+    if (!calcDisplay.includes(".")) {
+      setCalcDisplay(calcDisplay + ".");
+      setCalcNewNumber(false);
+    }
+  };
+
+  const handleCalcBackspace = () => {
+    if (calcDisplay.length > 1) {
+      setCalcDisplay(calcDisplay.slice(0, -1));
+    } else {
+      setCalcDisplay("0");
+      setCalcNewNumber(true);
+    }
+  };
+
   // Helpers
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -154,13 +231,78 @@ function MockExamContent() {
             ))}
           </div>
 
-          {/* Timer */}
-          <div className={`flex items-center gap-2 px-6 py-2 rounded-xl font-mono font-bold text-xl ${timeLeft < 300 ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-emerald-50 text-emerald-700'}`}>
-            <Timer size={24} />
-            {formatTime(timeLeft)}
+          {/* Timer & Calculator */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowCalculator(!showCalculator)}
+              className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+              title="Calculator"
+            >
+              <Calculator size={20} />
+            </button>
+            <div className={`flex items-center gap-2 px-6 py-2 rounded-xl font-mono font-bold text-xl ${timeLeft < 300 ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-emerald-50 text-emerald-700'}`}>
+              <Timer size={24} />
+              {formatTime(timeLeft)}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* CALCULATOR WIDGET */}
+      <AnimatePresence>
+        {showCalculator && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -20 }}
+            className="fixed top-20 right-4 z-30 bg-white rounded-2xl shadow-2xl border-2 border-slate-200 p-4 w-80"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <Calculator size={18} />
+                Calculator
+              </h3>
+              <button
+                onClick={() => setShowCalculator(false)}
+                className="p-1 hover:bg-slate-100 rounded-lg transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Display */}
+            <div className="bg-slate-900 text-white text-right text-2xl font-mono p-4 rounded-lg mb-3 overflow-x-auto">
+              {calcDisplay}
+            </div>
+
+            {/* Buttons */}
+            <div className="grid grid-cols-4 gap-2">
+              <button onClick={handleCalcClear} className="col-span-2 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg">C</button>
+              <button onClick={handleCalcBackspace} className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 rounded-lg">←</button>
+              <button onClick={() => handleCalcOperation("÷")} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg">÷</button>
+              
+              <button onClick={() => handleCalcNumber("7")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">7</button>
+              <button onClick={() => handleCalcNumber("8")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">8</button>
+              <button onClick={() => handleCalcNumber("9")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">9</button>
+              <button onClick={() => handleCalcOperation("×")} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg">×</button>
+              
+              <button onClick={() => handleCalcNumber("4")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">4</button>
+              <button onClick={() => handleCalcNumber("5")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">5</button>
+              <button onClick={() => handleCalcNumber("6")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">6</button>
+              <button onClick={() => handleCalcOperation("-")} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg">-</button>
+              
+              <button onClick={() => handleCalcNumber("1")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">1</button>
+              <button onClick={() => handleCalcNumber("2")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">2</button>
+              <button onClick={() => handleCalcNumber("3")} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">3</button>
+              <button onClick={() => handleCalcOperation("+")} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg">+</button>
+              
+              <button onClick={() => handleCalcNumber("0")} className="col-span-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">0</button>
+              <button onClick={handleCalcDecimal} className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-lg">.</button>
+              <button onClick={handleCalcEquals} className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg">=</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* QUESTION AREA */}
       <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm min-h-[60vh]">
@@ -223,8 +365,6 @@ function MockExamContent() {
     </div>
   );
 }
-
-// ⚠️ REQUIRED: Wrap in Suspense for Next.js Build
 export default function MockExamPage() {
   return (
     <React.Suspense fallback={<div className="p-10 text-center">Loading Exam Environment...</div>}>

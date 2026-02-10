@@ -30,14 +30,14 @@ export default function AdminOverview() {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        // ── Counts ──────────────────────────────────────────────────────────
+        // ── Counts
         const [userSnap, qSnap, subSnap] = await Promise.all([
           getCountFromServer(collection(db, "users")),
           getCountFromServer(collection(db, "questions")),
           getCountFromServer(collection(db, "subjects")),
         ]);
 
-        // Premium vs free breakdown
+       
         const premiumSnap = await getCountFromServer(
           query(collection(db, "users"), where("subscriptionStatus", "==", "premium"))
         );
@@ -52,7 +52,7 @@ export default function AdminOverview() {
           free: totalUsers - premiumCount,
         });
 
-        // ── Recent 5 users ───────────────────────────────────────────────────
+        // ── Recent 5 users 
         try {
           const recentQ = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(5));
           const recentSnap = await getDocs(recentQ);
@@ -63,7 +63,7 @@ export default function AdminOverview() {
           setRecentUsers(fallbackSnap.docs.map(d => ({ id: d.id, ...d.data() } as UserRow)));
         }
 
-        // ── Questions per subject ────────────────────────────────────────────
+        // ── Questions per subject 
         const subjectsSnap = await getDocs(collection(db, "subjects"));
         const subjectData = subjectsSnap.docs.map(d => d.data());
 
@@ -115,7 +115,7 @@ export default function AdminOverview() {
         </Link>
       </div>
 
-      {/* ── Primary stats ──────────────────────────────────────────────────── */}
+      {/* ── Primary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Students" value={stats.users} icon={<Users size={20} />} color="bg-blue-500" loading={loading} />
         <StatCard title="Premium Users" value={stats.premium} icon={<Crown size={20} />} color="bg-amber-500" loading={loading}
@@ -124,10 +124,10 @@ export default function AdminOverview() {
         <StatCard title="Active Subjects" value={stats.subjects} icon={<BookOpen size={20} />} color="bg-violet-500" loading={loading} />
       </div>
 
-      {/* ── Middle row ─────────────────────────────────────────────────────── */}
+      {/* Middle row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* Subscription split */}
+        {/* Subscription */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col gap-5">
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-slate-800">Subscription Split</h2>
@@ -140,7 +140,7 @@ export default function AdminOverview() {
             </div>
           ) : (
             <>
-              {/* Donut-style visual using CSS */}
+            
               <div className="flex items-center gap-6">
                 <div className="relative w-24 h-24 flex-shrink-0">
                   <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
@@ -205,7 +205,6 @@ export default function AdminOverview() {
             <div className="space-y-3">
               {subjectDist.map((sub) => {
                 const pct = maxQCount > 0 ? Math.round((sub.count / maxQCount) * 100) : 0;
-                // Extract a base Tailwind color from the stored class string e.g. "bg-blue-100 text-blue-600"
                 const barColor = sub.color?.includes("emerald") ? "bg-emerald-500"
                   : sub.color?.includes("blue") ? "bg-blue-500"
                   : sub.color?.includes("orange") ? "bg-orange-500"
@@ -237,7 +236,7 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      {/* ── Recent users ───────────────────────────────────────────────────── */}
+      {/*Recent users */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
           <h2 className="font-bold text-slate-800 flex items-center gap-2">

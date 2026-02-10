@@ -1,18 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, orderBy, doc, updateDoc, deleteDoc, getCountFromServer, where } from "firebase/firestore";
+import {
+  collection, getDocs, doc, updateDoc, deleteDoc,
+  getCountFromServer, where, query, writeBatch
+} from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
-import { 
-  Loader2, 
-  Edit2, 
-  Trash2, 
-  X, 
-  Save,
-  LayoutGrid,
-  AlertTriangle,
-  Palette
+import {
+  Loader2, Edit2, Trash2, X, Save, LayoutGrid, AlertTriangle, Palette
 } from "lucide-react";
 
 interface Subject {
@@ -25,97 +21,83 @@ interface Subject {
 export default function SubjectsManager() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-  const [editForm, setEditForm] = useState({
-    name: "",
-    color: ""
-  });
+  const [editForm, setEditForm] = useState({ name: "", color: "" });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
-  
+
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     subjectId: string | null;
+    subjectName: string;
     questionCount: number;
-  }>({
-    isOpen: false,
-    subjectId: null,
-    questionCount: 0
-  });
+  }>({ isOpen: false, subjectId: null, subjectName: "", questionCount: 0 });
 
   const colorOptions = [
-    { value: "bg-blue-100 text-blue-600", label: "Blue", preview: "bg-blue-100" },
+    { value: "bg-blue-100 text-blue-600",     label: "Blue",   preview: "bg-blue-100" },
     { value: "bg-emerald-100 text-emerald-600", label: "Green", preview: "bg-emerald-100" },
     { value: "bg-orange-100 text-orange-600", label: "Orange", preview: "bg-orange-100" },
     { value: "bg-purple-100 text-purple-600", label: "Purple", preview: "bg-purple-100" },
-    { value: "bg-pink-100 text-pink-600", label: "Pink", preview: "bg-pink-100" },
-    { value: "bg-red-100 text-red-600", label: "Red", preview: "bg-red-100" },
+    { value: "bg-pink-100 text-pink-600",     label: "Pink",   preview: "bg-pink-100" },
+    { value: "bg-red-100 text-red-600",       label: "Red",    preview: "bg-red-100" },
     { value: "bg-yellow-100 text-yellow-600", label: "Yellow", preview: "bg-yellow-100" },
     { value: "bg-indigo-100 text-indigo-600", label: "Indigo", preview: "bg-indigo-100" },
-    { value: "bg-teal-100 text-teal-600", label: "Teal", preview: "bg-teal-100" },
-    { value: "bg-slate-100 text-slate-600", label: "Gray", preview: "bg-slate-100" },
+    { value: "bg-teal-100 text-teal-600",     label: "Teal",   preview: "bg-teal-100" },
+    { value: "bg-slate-100 text-slate-600",   label: "Gray",   preview: "bg-slate-100" },
   ];
 
-  // 1. Fetch Subjects
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      // 🔧 FIX: Don't use orderBy to avoid missing documents
-      const sSnap = await getDocs(collection(db, "subjects"));
-      
-      const sData = sSnap.docs.map(doc => ({ 
-        id: doc.id, 
-        ...doc.data() 
-      } as Subject));
-      
-      // Sort manually instead (handles missing createdAt gracefully)
-      sData.sort((a, b) => {
-        const timeA = a.createdAt?.seconds || 0;
-        const timeB = b.createdAt?.seconds || 0;
-        return timeB - timeA; // Newest first
-      });
-      
-      setSubjects(sData);
-    } catch (error) {
-      console.error("Error fetching subjects:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+ 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const sSnap = await getDocs(collection(db, "subjects"));
+        const sData = sSnap.docs.map(d => ({ id: d.id, ...d.data() } as Subject));
 
-  fetchData();
-}, []);
+        sData.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+        setSubjects(sData);
 
-  // 2. Open Edit Modal
+      
+        const counts: Record<string, number> = {};
+        await Promise.all(
+          sData.map(async (sub) => {
+            const snap = await getCountFromServer(
+              query(collection(db, "questions"), where("subject", "==", sub.id))
+            );
+            counts[sub.id] = snap.data().count;
+          })
+        );
+        setQuestionCounts(counts);
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const handleEdit = (subject: Subject) => {
     setEditingSubject(subject);
-    setEditForm({
-      name: subject.name,
-      color: subject.color
-    });
+    setEditForm({ name: subject.name, color: subject.color });
   };
 
-  // 3. Save Edit
   const handleSaveEdit = async () => {
     if (!editingSubject) return;
     setSaving(true);
-
     try {
-      const subjectRef = doc(db, "subjects", editingSubject.id);
-      await updateDoc(subjectRef, {
+      await updateDoc(doc(db, "subjects", editingSubject.id), {
         name: editForm.name,
         color: editForm.color,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       });
-
-          setSubjects(prev => prev.map(s => 
-        s.id === editingSubject.id 
-          ? { ...s, name: editForm.name, color: editForm.color }
-          : s
-      ));
-
+      setSubjects(prev =>
+        prev.map(s =>
+          s.id === editingSubject.id ? { ...s, name: editForm.name, color: editForm.color } : s
+        )
+      );
       toast.success("Subject updated successfully!");
       setEditingSubject(null);
     } catch (error) {
@@ -126,29 +108,61 @@ useEffect(() => {
     }
   };
 
-  // 4. Delete Subject
-  const handleDeleteClick = (subjectId: string) => {
-    const questionCount = questionCounts[subjectId] || 0;
+
+  const handleDeleteClick = (subject: Subject) => {
     setConfirmDialog({
       isOpen: true,
-      subjectId,
-      questionCount
+      subjectId: subject.id,
+      subjectName: subject.name,
+      questionCount: questionCounts[subject.id] ?? 0,
     });
   };
 
+  
   const handleConfirmDelete = async () => {
     const subjectId = confirmDialog.subjectId;
     if (!subjectId) return;
 
+    setDeleting(true);
     try {
+  
+      const questionsSnap = await getDocs(
+        query(collection(db, "questions"), where("subject", "==", subjectId))
+      );
+
+    
+      const allDocs = questionsSnap.docs;
+      const CHUNK = 499; 
+
+      for (let i = 0; i < allDocs.length; i += CHUNK) {
+        const batch = writeBatch(db);
+        allDocs.slice(i, i + CHUNK).forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      }
+
+  
       await deleteDoc(doc(db, "subjects", subjectId));
+
+    
       setSubjects(prev => prev.filter(s => s.id !== subjectId));
-      toast.success("Subject deleted successfully!");
+      setQuestionCounts(prev => {
+        const next = { ...prev };
+        delete next[subjectId];
+        return next;
+      });
+
+      const qCount = confirmDialog.questionCount;
+      toast.success(
+        qCount > 0
+          ? `Subject deleted along with ${qCount} question${qCount !== 1 ? "s" : ""}.`
+          : "Subject deleted successfully."
+      );
     } catch (error) {
       console.error("Error deleting subject:", error);
-      toast.error("Failed to delete subject");
+      toast.error("Failed to delete subject. Please try again.");
     } finally {
-      setConfirmDialog({ isOpen: false, subjectId: null, questionCount: 0 });
+      setDeleting(false);
+      setConfirmDialog({ isOpen: false, subjectId: null, subjectName: "", questionCount: 0 });
     }
   };
 
@@ -162,7 +176,7 @@ useEffect(() => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -186,8 +200,8 @@ useEffect(() => {
           </div>
         ) : (
           subjects.map((subject) => (
-            <div 
-              key={subject.id} 
+            <div
+              key={subject.id}
               className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group"
             >
               {/* Subject Header */}
@@ -195,7 +209,7 @@ useEffect(() => {
                 <div className={`p-3 rounded-xl ${subject.color}`}>
                   <LayoutGrid size={24} />
                 </div>
-                
+
                 {/* Action Buttons */}
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -206,7 +220,7 @@ useEffect(() => {
                     <Edit2 size={18} />
                   </button>
                   <button
-                    onClick={() => handleDeleteClick(subject.id)}
+                    onClick={() => handleDeleteClick(subject)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                     title="Delete Subject"
                   >
@@ -216,11 +230,14 @@ useEffect(() => {
               </div>
 
               {/* Subject Details */}
-              <h3 className="text-xl font-bold text-slate-900 capitalize mb-2">
+              <h3 className="text-xl font-bold text-slate-900 capitalize mb-1">
                 {subject.name}
               </h3>
-              
-              
+
+              {/* Question count badge */}
+              <p className="text-sm text-slate-400">
+                {questionCounts[subject.id] ?? 0} question{(questionCounts[subject.id] ?? 0) !== 1 ? "s" : ""}
+              </p>
 
               {/* Subject ID */}
               <div className="mt-3 pt-3 border-t border-slate-100">
@@ -235,7 +252,7 @@ useEffect(() => {
       {editingSubject && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-8">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-slate-900">Edit Subject</h2>
@@ -248,14 +265,14 @@ useEffect(() => {
             </div>
 
             {/* Warning if subject has questions */}
-            {questionCounts[editingSubject.id] > 0 && (
+            {(questionCounts[editingSubject.id] ?? 0) > 0 && (
               <div className="mb-6 bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start gap-3">
                 <AlertTriangle className="text-amber-600 flex-shrink-0 mt-0.5" size={20} />
                 <div>
                   <p className="text-sm font-bold text-amber-900">Notice</p>
                   <p className="text-sm text-amber-800 mt-1">
-                    This subject has {questionCounts[editingSubject.id]} question(s). 
-                    Changing the subject name will not affect existing questions.
+                    This subject has {questionCounts[editingSubject.id]} question(s).
+                    Changing the name will not affect existing questions.
                   </p>
                 </div>
               </div>
@@ -263,8 +280,8 @@ useEffect(() => {
 
             {/* Edit Form */}
             <div className="space-y-6">
-              
-              {/* Subject ID (Read-only) */}
+
+              {/* Subject ID */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Subject ID</label>
                 <input
@@ -291,8 +308,7 @@ useEffect(() => {
               {/* Color Theme */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
-                  <Palette size={16} />
-                  Color Theme
+                  <Palette size={16} /> Color Theme
                 </label>
                 <div className="grid grid-cols-5 gap-3">
                   {colorOptions.map((colorOption) => (
@@ -302,16 +318,17 @@ useEffect(() => {
                       onClick={() => setEditForm({ ...editForm, color: colorOption.value })}
                       className={`h-12 rounded-xl border-2 transition-all ${
                         editForm.color === colorOption.value
-                          ? 'border-slate-900 ring-2 ring-slate-900 ring-offset-2'
-                          : 'border-slate-200 hover:border-slate-300'
+                          ? "border-slate-900 ring-2 ring-slate-900 ring-offset-2"
+                          : "border-slate-200 hover:border-slate-300"
                       } ${colorOption.preview}`}
                       title={colorOption.label}
                     />
                   ))}
                 </div>
                 <p className="text-xs text-slate-500 mt-2">
-                  Selected: <span className="font-bold capitalize">
-                    {colorOptions.find(c => c.value === editForm.color)?.label || "Custom"}
+                  Selected:{" "}
+                  <span className="font-bold capitalize">
+                    {colorOptions.find((c) => c.value === editForm.color)?.label || "Custom"}
                   </span>
                 </p>
               </div>
@@ -350,19 +367,23 @@ useEffect(() => {
           </div>
         </div>
       )}
-      
+
       {/* Confirm Delete Dialog */}
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        title="Delete Subject?"
-        message={confirmDialog.questionCount > 0
-          ? `Warning: This subject has ${confirmDialog.questionCount} question(s) associated with it.\nDeleting this subject will NOT delete the questions, but they will become orphaned.\nAre you sure you want to continue?`
-          : "Are you sure you want to delete this subject?"}
-        confirmText="Delete"
+        title={`Delete "${confirmDialog.subjectName}"?`}
+        message={
+          confirmDialog.questionCount > 0
+            ? `This will permanently delete the subject AND all ${confirmDialog.questionCount} question${confirmDialog.questionCount !== 1 ? "s" : ""} associated with it.\n\nThis action cannot be undone.`
+            : "Are you sure you want to delete this subject? This action cannot be undone."
+        }
+        confirmText={deleting ? "Deleting…" : `Delete${confirmDialog.questionCount > 0 ? ` & ${confirmDialog.questionCount} Questions` : ""}`}
         cancelText="Cancel"
         isDangerous
         onConfirm={handleConfirmDelete}
-        onCancel={() => setConfirmDialog({ isOpen: false, subjectId: null, questionCount: 0 })}
+        onCancel={() =>
+          setConfirmDialog({ isOpen: false, subjectId: null, subjectName: "", questionCount: 0 })
+        }
       />
     </div>
   );

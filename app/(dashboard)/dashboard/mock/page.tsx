@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// ── Exam type config ──────────────────────────────────────────────────────────
+
 const EXAM_CONFIG = {
   jamb: {
     label: "JAMB / UTME",
@@ -244,7 +244,6 @@ function MockSetupInner() {
   );
 }
 
-// ── Default export wrapped in Suspense (required for useSearchParams) ─────────
 export default function MockSetup() {
   return (
     <Suspense
