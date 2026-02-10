@@ -120,6 +120,7 @@ export default function PracticeSelection() {
     if (exam.premiumOnly && !isPremium) {
       router.push("/dashboard/upgrade");
     } else {
+      // Pass the exam type as a query param so mock page knows which setup to show
       router.push(`/dashboard/mock?type=${exam.id}`);
     }
   };

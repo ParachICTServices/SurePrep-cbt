@@ -29,16 +29,40 @@ export default function DashboardOverview() {
         const snapshot = await getDocs(q);
         const results = snapshot.docs.map(doc => {
            const data = doc.data();
-           // Convert Firestore Timestamp to readable date ONLY
+
            const date = data.date ? formatFirebaseDate(data.date) : 'Recent';
+           
+
+           let displayName = data.subject || 'Unknown';
+           
+         
+           if (data.type === 'mock') {
+            
+             if (data.examType) {
+              
+               const examTypeMap: Record<string, string> = {
+                 'jamb': 'JAMB Mock',
+                 'waec': 'WAEC Mock',
+                 'neco': 'NECO Mock',
+                 'interview': 'Job Interview Prep',
+                 'general': 'General Knowledge'
+               };
+               displayName = examTypeMap[data.examType] || data.examType.toUpperCase();
+             } else if (data.subjectsIncluded && Array.isArray(data.subjectsIncluded)) {
+               // If we have subjects, it's likely a multi-subject mock
+               displayName = `Mock Exam (${data.subjectsIncluded.length} subjects)`;
+             }
+           }
+           
            // Create clean object without any timestamp objects
            const cleanResult: any = {
              id: doc.id, 
              date, 
              percentage: data.percentage || 0, 
-             subject: data.subject || 'Unknown', 
+             subject: displayName, 
              score: data.score || 0, 
-             totalQuestions: data.totalQuestions || 0
+             totalQuestions: data.totalQuestions || 0,
+             examType: data.examType || data.type || 'practice'
            };
            return cleanResult;
         });
@@ -139,7 +163,7 @@ export default function DashboardOverview() {
                 <Link href={`/dashboard/result/${item.id}`} key={idx} className="block hover:bg-slate-50 transition">
                 <div  className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <div>
-                    <span className="block font-bold text-slate-700 capitalize">{item.subject}</span>
+                    <span className="block font-bold text-slate-700">{item.subject}</span>
                     <span className="text-xs text-slate-500">{item.date}</span>
                   </div>
                   <div className="flex items-center gap-4">
