@@ -43,7 +43,7 @@ export default function RegisterOnboarding() {
 
       setCreatedUser(user);
       setLoading(false);
-      setStep('plan'); // 🚀 Move to Plan Selection instead of Dashboard
+      setStep('plan'); 
 
     } catch (error: any) {
       toast.error(error.message);
@@ -72,7 +72,7 @@ export default function RegisterOnboarding() {
               paymentRef: transaction.reference
             });
             
-            // ⚠️ FIX: Force a hard reload so the AuthContext fetches the new Premium status
+           
             window.location.href = "/dashboard"; 
             
           } catch (error) {
@@ -107,7 +107,7 @@ export default function RegisterOnboarding() {
           <div className={`h-2 w-12 rounded-full transition-colors ${step === 'plan' ? 'bg-emerald-600' : 'bg-slate-200'}`}></div>
         </div>
 
-        {/* --- STEP 1: REGISTRATION FORM --- */}
+        {/* REGISTRATION FORM --- */}
         {step === 'register' && (
           <div className="max-w-md mx-auto bg-white rounded-3xl shadow-xl p-8 border border-slate-100 animate-in fade-in slide-in-from-bottom-4">
             <div className="text-center mb-8">
@@ -158,7 +158,7 @@ export default function RegisterOnboarding() {
           </div>
         )}
 
-        {/* --- STEP 2: PLAN SELECTION --- */}
+        {/* PLAN SELECTION --- */}
         {step === 'plan' && (
           <div className="animate-in fade-in slide-in-from-right-8 duration-500">
             <div className="text-center mb-8">
@@ -185,7 +185,7 @@ export default function RegisterOnboarding() {
                 </button>
               </div>
 
-              {/* Option B: Premium */}
+              {/* Premium */}
               <div className="bg-emerald-900 p-8 rounded-3xl border-2 border-emerald-500 text-white relative shadow-2xl transform scale-105">
                 <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl uppercase">
                   Best Value

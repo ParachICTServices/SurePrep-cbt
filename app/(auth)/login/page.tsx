@@ -42,10 +42,10 @@ export default function Login() {
     setResetLoading(true);
 
     try {
-      // Firebase will automatically send an email with a reset link button
+    
       await sendPasswordResetEmail(auth, resetEmail, {
-        url: `${window.location.origin}/login`, // Redirect after reset
-        handleCodeInApp: false, // Use Firebase's default email template with button
+        url: `${window.location.origin}/login`, 
+        handleCodeInApp: false,
       });
       
       setResetEmailSent(true);
@@ -95,7 +95,7 @@ export default function Login() {
                   ? "We've sent you a reset link" 
                   : "Enter your email to receive a reset link"
                 )
-              : "Continue your JAMB preparation 🚀"
+              : "Continue your CBT preparation 🚀"
             }
           </p>
         </div>
@@ -117,7 +117,7 @@ export default function Login() {
         <AnimatePresence mode="wait">
           {showForgotPassword ? (
             resetEmailSent ? (
-              // EMAIL SENT SUCCESS VIEW
+           
               <motion.div
                 key="email-sent"
                 initial={{ opacity: 0, scale: 0.95 }}

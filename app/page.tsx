@@ -105,7 +105,7 @@ export default function LandingPage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            JAMB 2026 Ready
+            CBT Practice Made Simple
           </motion.div>
           
           {/* Main Headline with Typewriter */}
@@ -136,7 +136,7 @@ export default function LandingPage() {
                 whileTap={{ scale: 0.95 }}
                 className="px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold text-lg hover:border-emerald-200 transition-colors"
               >
-                View Demo
+                Try Demo
               </motion.button>
             </Link>
           </motion.div>
@@ -171,7 +171,7 @@ export default function LandingPage() {
                     <Zap size={28} />
                   </div>
                   <h3 className="text-2xl font-bold mb-3 text-slate-900">Real-Time Speed Analytics</h3>
-                  <p className="text-slate-500 text-lg leading-relaxed max-w-md">We track exactly how fast you answer questions compared to the official JAMB timer, helping you build speed.</p>
+                  <p className="text-slate-500 text-lg leading-relaxed max-w-md">We track exactly how fast you answer questions compared to the official CBT Exam timer, helping you build speed.</p>
                 </div>
                 {/* Decorative Elements */}
                 <div className="absolute top-1/2 right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition duration-500" />
@@ -243,7 +243,7 @@ export default function LandingPage() {
                   <div className="bg-amber-100 p-3 rounded-xl text-amber-600">
                       <Star size={24} fill="currentColor" />
                   </div>
-                  <h3 className="text-xl font-bold text-amber-900">Trusted by So Effective Tutors</h3>
+                  <h3 className="text-xl font-bold text-amber-900">Trusted by Top Tutors</h3>
                 </div>
                 <p className="text-amber-900/70 leading-relaxed">Backed by 's leading home tutoring agency. We use the same curriculum that has helped students gain admission into UNILAG, UI, and ABU.</p>
               </motion.div>
