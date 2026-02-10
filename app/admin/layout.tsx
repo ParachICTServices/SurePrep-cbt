@@ -128,9 +128,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
            <NavLink href="/admin/dashboard/questions" icon={<BookOpen size={20}/>} label="Question Bank" active={pathname.includes("/questions")} />
              <NavLink href="/admin/dashboard/subjects" icon={<LayoutGrid size={20}/>} label="Manage Subjects" active={pathname.includes("/subjects")} />
 
-          <div className="px-4 py-3 flex items-center gap-3 text-slate-600 cursor-not-allowed opacity-50">
-            <Users size={20} /> <span className="text-sm">Users (Coming Soon)</span>
-          </div>
+            <NavLink href="/admin/dashboard/users" icon={<Users size={20} />} label="Users" active={pathname.includes("/users")} />
+          
         </nav>
 
         <div className="p-4 border-t border-slate-800">
