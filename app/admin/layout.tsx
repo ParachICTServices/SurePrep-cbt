@@ -2,7 +2,7 @@
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, FileText, Users, LogOut, ShieldCheck, Menu, X } from "lucide-react";
+import { Loader2, LayoutDashboard, FileText, Users, LogOut, ShieldCheck, Menu, X, BookOpen, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/lib/firebase";
@@ -126,6 +126,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             label="Content Manager"
             active={pathname.includes("/content")}
           />
+           <NavLink href="/admin/dashboard/questions" icon={<BookOpen size={20}/>} label="Question Bank" active={pathname.includes("/questions")} />
+             <NavLink href="/admin/dashboard/subjects" icon={<LayoutGrid size={20}/>} label="Manage Subjects" active={pathname.includes("/subjects")} />
+
           <div className="px-4 py-3 flex items-center gap-3 text-slate-600 cursor-not-allowed opacity-50">
             <Users size={20} /> <span className="text-sm">Users (Coming Soon)</span>
           </div>
