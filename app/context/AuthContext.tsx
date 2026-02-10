@@ -4,6 +4,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/app/lib/firebase';
 import { UserData } from '@/app/type';
+import { firebaseTimestampToMillis } from '@/app/lib/dateUtils';
 
 interface AuthContextType {
   user: User | null;
@@ -35,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: currentUser.email || null,
             displayName: currentUser.displayName || null,
             subscriptionStatus: rawData.subscriptionStatus || 'free',
-            subscriptionExpiry: rawData.subscriptionExpiry instanceof Timestamp ? rawData.subscriptionExpiry.toMillis() : rawData.subscriptionExpiry,
+            subscriptionExpiry: firebaseTimestampToMillis(rawData.subscriptionExpiry) || undefined,
           };
           setUserData(processedData);
         } else {

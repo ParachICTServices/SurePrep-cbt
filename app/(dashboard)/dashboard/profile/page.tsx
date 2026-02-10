@@ -15,19 +15,38 @@ export default function ProfilePage() {
     router.push("/login");
   };
 
+  // Format Date Helper - handles all date types
+  const formatDate = (date: any) => {
+    if (!date) return "N/A";
+    
+    try {
+      // Case A: Firebase Timestamp (has seconds property)
+      if (date && typeof date === 'object' && 'seconds' in date) {
+        return new Date(date.seconds * 1000).toLocaleDateString('en-NG', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+
+      // Case B: String or Date object
+      const dateObj = new Date(date);
+      if (isNaN(dateObj.getTime())) return "N/A";
+      
+      return dateObj.toLocaleDateString('en-NG', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return "N/A";
+    }
+  };
+
   if (loading) return <div className="p-10 flex justify-center">Loading Profile...</div>;
 
   const isPremium = userData?.subscriptionStatus === 'premium';
-
-  // Format Date Helper
-  const formatDate = (isoString: string | undefined) => {
-    if (!isoString) return "N/A";
-    return new Date(isoString).toLocaleDateString('en-NG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -61,7 +80,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase font-bold">Email Address</p>
-                  <p className="font-medium text-slate-900">{user?.email}</p>
+                  <p className="font-medium text-slate-900">{user?.email || "N/A"}</p>
                 </div>
               </div>
             </div>
@@ -114,7 +133,7 @@ export default function ProfilePage() {
               </button>
 
               <p className="text-xs text-slate-400 mt-6 text-center">
-                Member since {user?.metadata?.creationTime ? formatDate(user.metadata.creationTime) : "N/A"}
+                Member since {formatDate(user?.metadata?.creationTime)}
               </p>
            </div>
         </div>

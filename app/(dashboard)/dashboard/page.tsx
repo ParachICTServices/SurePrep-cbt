@@ -5,6 +5,7 @@ import { db } from "@/app/lib/firebase";
 import { collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
 import { Trophy, Clock, TrendingUp, ArrowRight, Activity, Calendar, Zap, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { formatFirebaseDate } from "@/app/lib/dateUtils";
 
 export default function DashboardOverview() {
   const { userData, user, loading: authLoading } = useAuth();
@@ -28,9 +29,18 @@ export default function DashboardOverview() {
         const snapshot = await getDocs(q);
         const results = snapshot.docs.map(doc => {
            const data = doc.data();
-           // Convert Firestore Timestamp to readable date
-           const date = data.date ? new Date(data.date.seconds * 1000).toLocaleDateString() : 'Just now';
-           return {id: doc.id, date, percentage: data.percentage, subject: data.subject, score: data.score, totalQuestions: data.totalQuestions, ...data };
+           // Convert Firestore Timestamp to readable date ONLY
+           const date = data.date ? formatFirebaseDate(data.date) : 'Recent';
+           // Create clean object without any timestamp objects
+           const cleanResult: any = {
+             id: doc.id, 
+             date, 
+             percentage: data.percentage || 0, 
+             subject: data.subject || 'Unknown', 
+             score: data.score || 0, 
+             totalQuestions: data.totalQuestions || 0
+           };
+           return cleanResult;
         });
         
         setRecentActivity(results);

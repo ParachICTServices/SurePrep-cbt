@@ -4,6 +4,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { db } from "@/app/lib/firebase";
 import { collection, addDoc, setDoc, doc, serverTimestamp, getDocs, query } from "firebase/firestore";
 import { PlusCircle, Save, FileText, LayoutGrid, Loader2 } from "lucide-react";
+import { formatFirebaseDate } from "@/app/lib/dateUtils";
 
 export default function ContentManager() {
   const { user } = useAuth();

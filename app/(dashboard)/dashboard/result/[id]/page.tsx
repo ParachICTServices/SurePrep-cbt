@@ -6,6 +6,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, XCircle, ArrowLeft, Lock, Zap } from "lucide-react";
 import Link from "next/link";
+import { formatFirebaseDate } from "@/app/lib/dateUtils";
 
 export default function ExamResultReview() {
   const { id } = useParams(); // Get the Result ID from URL
@@ -22,7 +23,17 @@ export default function ExamResultReview() {
         const docRef = doc(db, "testResults", id as string);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setResult(docSnap.data());
+          const data = docSnap.data();
+          // Convert timestamp and create clean result object to avoid rendering Timestamp objects
+          const cleanResult: any = {
+            subject: data.subject || 'Unknown',
+            score: data.score || 0,
+            totalQuestions: data.totalQuestions || 0,
+            percentage: data.percentage || 0,
+            history: data.history || [],
+            date: data.date ? formatFirebaseDate(data.date) : 'Recent'
+          };
+          setResult(cleanResult);
         }
       } catch (error) {
         console.error("Error fetching result:", error);

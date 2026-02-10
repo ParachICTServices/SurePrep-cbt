@@ -6,6 +6,7 @@ import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/context/AuthContext";
 import { Loader2, Timer, AlertTriangle } from "lucide-react";
 import React from "react";
+import { formatFirebaseDate } from "@/app/lib/dateUtils";
 
 // Helper to wrap useSearchParams in Suspense for Next.js
 function MockExamContent() {

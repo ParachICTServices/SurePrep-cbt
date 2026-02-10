@@ -6,6 +6,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { Loader2, Timer, CheckCircle, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { formatFirebaseDate } from "@/app/lib/dateUtils";
 
 // Define Types
 interface Question {
