@@ -2,14 +2,14 @@
 import { useState } from "react";
 import { collection, addDoc, writeBatch, doc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
+import { toast } from "sonner";
 
-// Dummy Data
 const dummyQuestions = [
   {
     subject: "english",
     questionText: "Which of the following is the correct spelling?",
     options: ["Accomodation", "Accommodation", "Acommodation", "Accommodattion"],
-    correctOption: 1, // Index 0-3 (So 'Accommodation' is correct)
+    correctOption: 1,
     explanation: "Accommodation has two 'c's and two 'm's."
   },
   {
@@ -41,7 +41,6 @@ export default function AdminSeeder() {
   const seedData = async () => {
     setLoading(true);
     try {
-      // We use a Batch to send multiple questions at once
       const batch = writeBatch(db);
       
       dummyQuestions.forEach((q) => {
@@ -50,10 +49,10 @@ export default function AdminSeeder() {
       });
 
       await batch.commit();
-      alert("Success! Added dummy questions to database.");
+      toast.success("Success! Added dummy questions to database.");
     } catch (e) {
       console.error(e);
-      alert("Error adding questions. Check console.");
+      toast.error("Error adding questions. Check console.");
     } finally {
       setLoading(false);
     }

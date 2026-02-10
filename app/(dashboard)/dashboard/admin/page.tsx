@@ -3,16 +3,16 @@ import { useState } from "react";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/context/AuthContext";
 import { Save, PlusCircle, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
-import { addDoc, collection, serverTimestamp, setDoc, doc } from "firebase/firestore"; 
+import { addDoc, collection, serverTimestamp, setDoc, doc } from "firebase/firestore";
+import { toast } from "sonner"; 
 
 export default function AdminPanel() {
   const { user } = useAuth();
   
-  // Form State
   const [loading, setLoading] = useState(false);
   const [subject, setSubject] = useState("");
   const [questionText, setQuestionText] = useState("");
-  const [options, setOptions] = useState(["", "", "", ""]); // 4 Options
+  const [options, setOptions] = useState(["", "", "", ""]);
   const [correctOption, setCorrectOption] = useState(0); // 0 = A, 1 = B...
   const [explanation, setExplanation] = useState("");
   
@@ -44,7 +44,7 @@ const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
    try {
 
       if (!subject || !questionText || options.some(opt => opt === "")) {
-        alert("Please fill in all fields");
+        toast.error("Please fill in all fields");
         setLoading(false);
         return;
       }
@@ -75,11 +75,11 @@ const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
       setOptions(["", "", "", ""]);
       setExplanation("");
       
-      alert(`Saved! '${subject}' is now live.`);
+      toast.success(`Saved! '${subject}' is now live.`);
     }
       catch (error) {
       console.error("Error adding question:", error);
-      alert("Error saving question.");
+      toast.error("Error saving question.");
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,7 @@ import { Loader2, LayoutDashboard, FileText, Users, LogOut, ShieldCheck, Menu, X
 import Link from "next/link";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/lib/firebase";
+import { toast } from "sonner";
 
 const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
   .split(",")
@@ -37,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // 2. If logged in but NOT an admin, kick them out
     if (!allowedAdmins.includes(currentUserEmail)) {
       // 🚨 ALERT THE USER WHY THEY FAILED
-      alert(`ACCESS DENIED.\n\nYou are logged in as: ${user.email}\n\nBut the Admin list only allows:\n${ADMIN_EMAILS.join("\n")}`);
+      toast.error(`ACCESS DENIED.\n\nYou are logged in as: ${user.email}\n\nBut the Admin list only allows:\n${ADMIN_EMAILS.join("\n")}`);
       
       router.push("/dashboard");
       return;
@@ -47,7 +48,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setIsAuthorized(true);
   }, [user, loading, pathname, router]);
 
-  // Close sidebar when route changes (mobile)
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
@@ -57,7 +57,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push("/admin/login");
   };
 
-  // Allow the login page to render without the sidebar
   if (pathname === "/admin/login") {
     return <>{children}</>;
   }
@@ -154,7 +153,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 }
 
-// Helper Component for Sidebar Links
 function NavLink({ href, icon, label, active }: any) {
   return (
     <Link

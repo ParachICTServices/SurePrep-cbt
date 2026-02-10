@@ -1,5 +1,5 @@
 {
-  "name": "cbt-website",
+  "name": "Parach Cbt",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -16,7 +16,8 @@
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "react": "^19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

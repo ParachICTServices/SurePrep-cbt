@@ -9,7 +9,6 @@ export const formatFirebaseDate = (timestamp: any): string => {
   if (!timestamp) return 'N/A';
 
   try {
-    // Check if it's a Firebase Timestamp object (has seconds and nanoseconds)
     if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
       return new Date(timestamp.seconds * 1000).toLocaleDateString('en-NG', {
         year: 'numeric',
@@ -18,7 +17,6 @@ export const formatFirebaseDate = (timestamp: any): string => {
       });
     }
 
-    // If it's already a number (milliseconds)
     if (typeof timestamp === 'number') {
       return new Date(timestamp).toLocaleDateString('en-NG', {
         year: 'numeric',
@@ -27,7 +25,6 @@ export const formatFirebaseDate = (timestamp: any): string => {
       });
     }
 
-    // If it's an ISO string
     if (typeof timestamp === 'string') {
       return new Date(timestamp).toLocaleDateString('en-NG', {
         year: 'numeric',

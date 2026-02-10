@@ -5,6 +5,7 @@ import { db } from "@/app/lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 import { CheckCircle, Zap, Shield, Star, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function UpgradePage() {
   const { user, userData } = useAuth();
@@ -20,7 +21,7 @@ export default function UpgradePage() {
     setLoading(true);
 
     if (!PAYSTACK_KEY) {
-      alert("Paystack Key not found in .env.local");
+      toast.error("Paystack Key not found in .env.local");
       setLoading(false);
       return;
     }
@@ -31,11 +32,10 @@ export default function UpgradePage() {
       paystack.newTransaction({
         key: PAYSTACK_KEY,
         email: user.email!,
-        amount: PRICE * 100, // Convert to kobo
+        amount: PRICE * 100,
         currency: 'NGN',
-        reference: "" + Math.floor((Math.random() * 1000000000) + 1), // Unique ref
+        reference: "" + Math.floor((Math.random() * 1000000000) + 1),
         onSuccess: async (transaction: any) => {
-          // Payment Success! Update Database
           try {
             const userRef = doc(db, "users", user.uid);
             await updateDoc(userRef, {
@@ -44,21 +44,21 @@ export default function UpgradePage() {
               paymentRef: transaction.reference
             });
             
-            alert("Payment Successful! Welcome to Premium.");
-            window.location.href = "/dashboard"; // Reload to refresh permissions
+            toast.success("Payment Successful! Welcome to Premium.");
+            window.location.href = "/dashboard";
           } catch (error) {
             console.error("Error updating profile:", error);
-            alert("Payment received but error updating profile. Contact support.");
+            toast.error("Payment received but error updating profile. Contact support.");
           }
         },
         onCancel: () => {
           setLoading(false);
-          alert("Transaction Cancelled");
+          toast.error("Transaction Cancelled");
         }
       });
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Error initializing payment. Please try again.");
+      toast.error("Error initializing payment. Please try again.");
       setLoading(false);
     }
   };

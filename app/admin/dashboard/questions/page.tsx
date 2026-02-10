@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, orderBy, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { 
   Loader2, 
   Search, 
@@ -43,18 +45,24 @@ export default function QuestionBank() {
     explanation: ""
   });
   const [saving, setSaving] = useState(false);
+  
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    questionId: string | null;
+  }>({
+    isOpen: false,
+    questionId: null
+  });
 
   // 1. Fetch Questions & Subjects
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch Questions
         const qQuery = query(collection(db, "questions"), orderBy("createdAt", "desc"));
         const qSnap = await getDocs(qQuery);
         const qData = qSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Question));
         setQuestions(qData);
 
-        // Fetch Subjects for filter dropdown
         const sSnap = await getDocs(collection(db, "subjects"));
         const sData = sSnap.docs.map(doc => doc.data());
         setSubjects(sData);
@@ -100,34 +108,43 @@ export default function QuestionBank() {
         updatedAt: new Date().toISOString()
       });
 
-      // Update local state
       setQuestions(prev => prev.map(q => 
         q.id === editingQuestion.id 
           ? { ...q, ...editForm }
           : q
       ));
 
-      alert("Question updated successfully!");
+      toast.success("Question updated successfully!");
       setEditingQuestion(null);
     } catch (error) {
       console.error("Error updating question:", error);
-      alert("Failed to update question");
+      toast.error("Failed to update question");
     } finally {
       setSaving(false);
     }
   };
 
   // 5. Delete Question
-  const handleDelete = async (questionId: string) => {
-    if (!confirm("Are you sure you want to delete this question? This action cannot be undone.")) return;
+  const handleDeleteClick = (questionId: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      questionId
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const questionId = confirmDialog.questionId;
+    if (!questionId) return;
 
     try {
       await deleteDoc(doc(db, "questions", questionId));
       setQuestions(prev => prev.filter(q => q.id !== questionId));
-      alert("Question deleted successfully!");
+      toast.success("Question deleted successfully!");
     } catch (error) {
       console.error("Error deleting question:", error);
-      alert("Failed to delete question");
+      toast.error("Failed to delete question");
+    } finally {
+      setConfirmDialog({ isOpen: false, questionId: null });
     }
   };
 
@@ -235,7 +252,7 @@ export default function QuestionBank() {
                     <Edit2 size={18} />
                   </button>
                   <button
-                    onClick={() => handleDelete(q.id)}
+                    onClick={() => handleDeleteClick(q.id)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                     title="Delete Question"
                   >
@@ -400,6 +417,18 @@ export default function QuestionBank() {
           </div>
         </div>
       )}
+      
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Delete Question?"
+        message="Are you sure you want to delete this question? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ isOpen: false, questionId: null })}
+      />
     </div>
   );
 }

@@ -15,12 +15,10 @@ export default function ProfilePage() {
     router.push("/login");
   };
 
-  // Format Date Helper - handles all date types
   const formatDate = (date: any) => {
     if (!date) return "N/A";
     
     try {
-      // Case A: Firebase Timestamp (has seconds property)
       if (date && typeof date === 'object' && 'seconds' in date) {
         return new Date(date.seconds * 1000).toLocaleDateString('en-NG', {
           year: 'numeric',
@@ -29,7 +27,6 @@ export default function ProfilePage() {
         });
       }
 
-      // Case B: String or Date object
       const dateObj = new Date(date);
       if (isNaN(dateObj.getTime())) return "N/A";
       

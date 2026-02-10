@@ -29,7 +29,7 @@ const Typewriter = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % words.length);
-    }, 2500); // Change every 2.5 seconds
+    }, 2500);
     return () => clearInterval(interval);
   }, []);
 

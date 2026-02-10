@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "./context/AuthContext";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Parach - JAMB CBT Practice",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="en" className="font-cabinet-grotesk">
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <Toaster />
       </body>
     </html>
   );

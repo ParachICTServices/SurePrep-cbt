@@ -9,7 +9,7 @@ import Link from "next/link";
 import { formatFirebaseDate } from "@/app/lib/dateUtils";
 
 export default function ExamResultReview() {
-  const { id } = useParams(); // Get the Result ID from URL
+  const { id } = useParams();
   const { userData } = useAuth();
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -24,7 +24,6 @@ export default function ExamResultReview() {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          // Convert timestamp and create clean result object to avoid rendering Timestamp objects
           const cleanResult: any = {
             subject: data.subject || 'Unknown',
             score: data.score || 0,
@@ -89,9 +88,8 @@ export default function ExamResultReview() {
                 {q.options.map((opt: string, optIdx: number) => {
                   let optionColor = "bg-slate-50 border-slate-100 text-slate-500"; // Default
                   
-                  // Logic for coloring options
                   if (optIdx === q.correctOption) {
-                    optionColor = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold"; // Correct Answer
+                    optionColor = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold";
                   } else if (optIdx === q.selectedOption && !isCorrect) {
                     optionColor = "bg-red-100 border-red-500 text-red-900"; // User's Wrong Choice
                   }

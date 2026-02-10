@@ -4,6 +4,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/app/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Loader2, LockIcon } from "lucide-react";
+import { toast } from "sonner";
 
 
 const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
@@ -29,11 +30,11 @@ export default function AdminLogin() {
       if (ADMIN_EMAILS.includes(user.email!)) {
         router.push("/admin/dashboard");
       } else {
-        alert("Access Denied: This account is not an Admin.");
-        await auth.signOut(); // Kick them out immediately
+        toast.error("Access Denied: This account is not an Admin.");
+        await auth.signOut();
       }
     } catch (error: any) {
-      alert("Admin Login Failed: " + error.message);
+      toast.error("Admin Login Failed: " + error.message);
     } finally {
       setLoading(false);
     }

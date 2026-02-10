@@ -7,8 +7,8 @@ import { useAuth } from "@/app/context/AuthContext";
 import { Loader2, Timer, AlertTriangle } from "lucide-react";
 import React from "react";
 import { formatFirebaseDate } from "@/app/lib/dateUtils";
+import { toast } from "sonner";
 
-// Helper to wrap useSearchParams in Suspense for Next.js
 function MockExamContent() {
   const searchParams = useSearchParams();
   const subsParam = searchParams.get("subs"); // "english,maths,physics,chem"
@@ -21,9 +21,8 @@ function MockExamContent() {
   const [activeSubject, setActiveSubject] = useState<string>("");
   const [loading, setLoading] = useState(true);
   
-  // Exam State
   const [answers, setAnswers] = useState<Record<string, Record<number, number>>>({}); // { subjectId: { qIndex: optionIndex } }
-  const [timeLeft, setTimeLeft] = useState(120 * 60); // 2 Hours
+  const [timeLeft, setTimeLeft] = useState(120 * 60);
   const [submitted, setSubmitted] = useState(false);
 
   // 1. Initialize & Fetch
@@ -36,14 +35,11 @@ function MockExamContent() {
     const fetchAll = async () => {
       const questionsMap: Record<string, any[]> = {};
       
-      // Fetch questions for each subject in parallel
       await Promise.all(subList.map(async (sub) => {
-        // In real JAMB, English is 60, others 40. For now, we fetch up to 40 of each.
         const q = query(collection(db, "questions"), where("subject", "==", sub), limit(40));
         const snap = await getDocs(q);
         questionsMap[sub] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         
-        // Initialize answers object
         setAnswers(prev => ({ ...prev, [sub]: {} }));
       }));
 
@@ -87,7 +83,6 @@ function MockExamContent() {
     let totalScore = 0;
     let totalQuestions = 0;
 
-    // Calculate Score across all subjects
     subjects.forEach(sub => {
       const subQs = allQuestions[sub] || [];
       const subAns = answers[sub] || {};
@@ -98,12 +93,11 @@ function MockExamContent() {
       totalQuestions += subQs.length;
     });
 
-    // Save to DB
     if (user) {
       try {
         await addDoc(collection(db, "testResults"), {
           userId: user.uid,
-          subject: "JAMB Mock Simulation", // Special Title
+          subject: "JAMB Mock Simulation",
           subjectsIncluded: subjects,
           score: totalScore,
           totalQuestions,
@@ -112,8 +106,7 @@ function MockExamContent() {
           type: "mock"
         });
         
-        // Redirect to Dashboard (or a specific Mock Result page)
-        alert(`Mock Submitted! Score: ${totalScore}/${totalQuestions}`);
+        toast.success(`Mock Submitted! Score: ${totalScore}/${totalQuestions}`);
         router.push("/dashboard");
       } catch (e) {
         console.error("Error saving mock", e);

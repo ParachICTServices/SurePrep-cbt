@@ -8,7 +8,6 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { formatFirebaseDate } from "@/app/lib/dateUtils";
 
-// Define Types
 interface Question {
   id: string;
   questionText: string;
@@ -27,7 +26,7 @@ export default function ExamInterface() {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(30 * 60); // 30 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(30 * 60);
 
   // 1. Fetch Questions on Load
   useEffect(() => {
@@ -54,7 +53,7 @@ export default function ExamInterface() {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleSubmit(); // Auto submit
+          handleSubmit();
           return 0;
         }
         return prev - 1;
@@ -113,7 +112,6 @@ export default function ExamInterface() {
     }
   };
 
-  // Formatting Time (MM:SS)
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;

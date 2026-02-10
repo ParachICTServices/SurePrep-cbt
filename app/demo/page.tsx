@@ -62,9 +62,8 @@ export default function DemoPage() {
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(90); // Increased to 90 seconds for 6 questions
+  const [timeLeft, setTimeLeft] = useState(90);
 
-  // Timer Effect
   useEffect(() => {
     if (!started || finished) return;
     const timer = setInterval(() => {
@@ -98,7 +97,6 @@ export default function DemoPage() {
     }
   };
 
-  // Format Time
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;

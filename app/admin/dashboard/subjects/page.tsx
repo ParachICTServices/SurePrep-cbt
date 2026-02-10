@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { collection, getDocs, query, orderBy, doc, updateDoc, deleteDoc, getCountFromServer, where } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { 
   Loader2, 
   Edit2, 
@@ -24,7 +26,6 @@ export default function SubjectsManager() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Edit Modal
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -32,10 +33,18 @@ export default function SubjectsManager() {
   });
   const [saving, setSaving] = useState(false);
 
-  // Question count per subject
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
+  
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    subjectId: string | null;
+    questionCount: number;
+  }>({
+    isOpen: false,
+    subjectId: null,
+    questionCount: 0
+  });
 
-  // Available color options
   const colorOptions = [
     { value: "bg-blue-100 text-blue-600", label: "Blue", preview: "bg-blue-100" },
     { value: "bg-emerald-100 text-emerald-600", label: "Green", preview: "bg-emerald-100" },
@@ -101,44 +110,45 @@ useEffect(() => {
         updatedAt: new Date().toISOString()
       });
 
-      // Update local state
-      setSubjects(prev => prev.map(s => 
+          setSubjects(prev => prev.map(s => 
         s.id === editingSubject.id 
           ? { ...s, name: editForm.name, color: editForm.color }
           : s
       ));
 
-      alert("Subject updated successfully!");
+      toast.success("Subject updated successfully!");
       setEditingSubject(null);
     } catch (error) {
       console.error("Error updating subject:", error);
-      alert("Failed to update subject");
+      toast.error("Failed to update subject");
     } finally {
       setSaving(false);
     }
   };
 
   // 4. Delete Subject
-  const handleDelete = async (subjectId: string) => {
+  const handleDeleteClick = (subjectId: string) => {
     const questionCount = questionCounts[subjectId] || 0;
-    
-    if (questionCount > 0) {
-      if (!confirm(
-        `Warning: This subject has ${questionCount} question(s) associated with it. ` +
-        `Deleting this subject will NOT delete the questions, but they will become orphaned. ` +
-        `Are you sure you want to continue?`
-      )) return;
-    } else {
-      if (!confirm("Are you sure you want to delete this subject?")) return;
-    }
+    setConfirmDialog({
+      isOpen: true,
+      subjectId,
+      questionCount
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const subjectId = confirmDialog.subjectId;
+    if (!subjectId) return;
 
     try {
       await deleteDoc(doc(db, "subjects", subjectId));
       setSubjects(prev => prev.filter(s => s.id !== subjectId));
-      alert("Subject deleted successfully!");
+      toast.success("Subject deleted successfully!");
     } catch (error) {
       console.error("Error deleting subject:", error);
-      alert("Failed to delete subject");
+      toast.error("Failed to delete subject");
+    } finally {
+      setConfirmDialog({ isOpen: false, subjectId: null, questionCount: 0 });
     }
   };
 
@@ -196,7 +206,7 @@ useEffect(() => {
                     <Edit2 size={18} />
                   </button>
                   <button
-                    onClick={() => handleDelete(subject.id)}
+                    onClick={() => handleDeleteClick(subject.id)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
                     title="Delete Subject"
                   >
@@ -210,12 +220,7 @@ useEffect(() => {
                 {subject.name}
               </h3>
               
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <span className="text-sm text-slate-500">Questions</span>
-                <span className="text-lg font-bold text-slate-900">
-                  {questionCounts[subject.id] || 0}
-                </span>
-              </div>
+              
 
               {/* Subject ID */}
               <div className="mt-3 pt-3 border-t border-slate-100">
@@ -345,6 +350,20 @@ useEffect(() => {
           </div>
         </div>
       )}
+      
+      {/* Confirm Delete Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Delete Subject?"
+        message={confirmDialog.questionCount > 0
+          ? `Warning: This subject has ${confirmDialog.questionCount} question(s) associated with it.\nDeleting this subject will NOT delete the questions, but they will become orphaned.\nAre you sure you want to continue?`
+          : "Are you sure you want to delete this subject?"}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDangerous
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setConfirmDialog({ isOpen: false, subjectId: null, questionCount: 0 })}
+      />
     </div>
   );
 }

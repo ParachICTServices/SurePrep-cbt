@@ -2,8 +2,7 @@
 import { useAuth } from '@/app/context/AuthContext';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/app/lib/firebase';
-import { useState } from 'react';
-
+import { useState } from 'react';import { toast } from 'sonner';
 export default function UpgradeButton() {
   const { user, userData } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -48,7 +47,7 @@ export default function UpgradeButton() {
       });
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Error initializing payment. Please try again.");
+      toast.error("Error initializing payment. Please try again.");
       setLoading(false);
     }
   };

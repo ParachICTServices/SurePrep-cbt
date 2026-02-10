@@ -4,6 +4,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { db } from "@/app/lib/firebase";
 import { collection, addDoc, setDoc, doc, serverTimestamp, getDocs, query, writeBatch } from "firebase/firestore";
 import { PlusCircle, Save, FileText, LayoutGrid, Loader2, Upload, FileUp, CheckCircle, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ContentManager() {
   const { user } = useAuth();
@@ -13,24 +14,20 @@ export default function ContentManager() {
   const [loading, setLoading] = useState(false);
   const [subjects, setSubjects] = useState<any[]>([]);
 
-  // Subject Form State
   const [subName, setSubName] = useState("");
   const [subColor, setSubColor] = useState("bg-blue-100 text-blue-600");
 
-  // Question Form State
   const [selectedSubject, setSelectedSubject] = useState("");
   const [qText, setQText] = useState("");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [correctOpt, setCorrectOpt] = useState(0);
   const [explanation, setExplanation] = useState("");
 
-  // Bulk Upload State
   const [bulkText, setBulkText] = useState("");
   const [bulkSubject, setBulkSubject] = useState("");
   const [parsedQuestions, setParsedQuestions] = useState<any[]>([]);
   const [bulkErrors, setBulkErrors] = useState<string[]>([]);
 
-  // Fetch Subjects
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
@@ -49,7 +46,6 @@ export default function ContentManager() {
     fetchSubjects();
   }, []);
 
-  // Create Subject Handler
   const handleCreateSubject = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -61,20 +57,19 @@ export default function ContentManager() {
         color: subColor, 
         createdAt: serverTimestamp()
       });
-      alert(`Subject "${subName}" created!`);
+      toast.success(`Subject "${subName}" created!`);
       setSubName("");
       setSubjects(prev => [...prev, { id, name: subName, color: subColor }]);
       setSelectedSubject(id);
       setBulkSubject(id);
     } catch (e) {
       console.error(e);
-      alert("Error creating subject");
+      toast.error("Error creating subject");
     } finally {
       setLoading(false);
     }
   };
 
-  // Add Single Question Handler
   const handleAddQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -91,20 +86,19 @@ export default function ContentManager() {
         createdBy: user?.email
       });
 
-      alert("Question Added!");
+      toast.success("Question Added!");
       setQText("");
       setOptions(["", "", "", ""]);
       setExplanation("");
       setCorrectOpt(0);
     } catch (e) {
       console.error(e);
-      alert("Error adding question");
+      toast.error("Error adding question");
     } finally {
       setLoading(false);
     }
   };
 
-  // Parse Bulk Questions
   const handleParseBulk = () => {
     setBulkErrors([]);
     setParsedQuestions([]);
@@ -125,9 +119,7 @@ export default function ContentManager() {
       lineNumber++;
       const trimmed = line.trim();
 
-      // Question line (starts with number followed by period or parenthesis)
       if (/^\d+[\.)]\s/.test(trimmed)) {
-        // Save previous question if exists
         if (currentQuestion) {
           const validation = validateQuestion(currentQuestion, lineNumber - 1);
           if (validation.valid) {
@@ -137,7 +129,6 @@ export default function ContentManager() {
           }
         }
 
-        // Start new question
         currentQuestion = {
           questionText: trimmed.replace(/^\d+[\.)]\s/, '').trim(),
           options: [],
@@ -145,7 +136,6 @@ export default function ContentManager() {
           explanation: ""
         };
       }
-      // Option line (A, B, C, D)
       else if (/^[A-D][\.)]\s/i.test(trimmed)) {
         if (!currentQuestion) {
           errors.push(`Line ${lineNumber}: Option found without a question.`);
@@ -153,7 +143,6 @@ export default function ContentManager() {
         }
         currentQuestion.options.push(trimmed.replace(/^[A-D][\.)]\s/i, '').trim());
       }
-      // Answer line (ANSWER: or ANS:)
       else if (/^(ANSWER|ANS):\s*[A-D]$/i.test(trimmed)) {
         if (!currentQuestion) {
           errors.push(`Line ${lineNumber}: Answer found without a question.`);
@@ -162,7 +151,6 @@ export default function ContentManager() {
         const answerLetter = trimmed.match(/[A-D]$/i)?.[0].toUpperCase();
         currentQuestion.correctOption = answerLetter ? answerLetter.charCodeAt(0) - 65 : -1;
       }
-      // Explanation line (EXPLANATION: or EXP:)
       else if (/^(EXPLANATION|EXP):/i.test(trimmed)) {
         if (!currentQuestion) {
           errors.push(`Line ${lineNumber}: Explanation found without a question.`);
@@ -186,7 +174,6 @@ export default function ContentManager() {
     setBulkErrors(errors);
   };
 
-  // Validate a parsed question
   const validateQuestion = (q: any, lineNum: number) => {
     const errors: string[] = [];
     
@@ -203,15 +190,14 @@ export default function ContentManager() {
     return { valid: errors.length === 0, errors };
   };
 
-  // Upload Bulk Questions
   const handleBulkUpload = async () => {
     if (parsedQuestions.length === 0) {
-      alert("No valid questions to upload. Please parse your text first.");
+      toast.error("No valid questions to upload. Please parse your text first.");
       return;
     }
 
     if (!bulkSubject) {
-      alert("Please select a subject.");
+      toast.error("Please select a subject.");
       return;
     }
 
@@ -233,14 +219,14 @@ export default function ContentManager() {
       });
 
       await batch.commit();
-      
-      alert(`Success! ${parsedQuestions.length} questions uploaded.`);
+
+      toast.success(`Success! ${parsedQuestions.length} questions uploaded.`);
       setBulkText("");
       setParsedQuestions([]);
       setBulkErrors([]);
     } catch (e) {
       console.error(e);
-      alert("Error uploading questions");
+      toast.error("Error uploading questions");
     } finally {
       setLoading(false);
     }

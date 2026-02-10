@@ -6,23 +6,20 @@ import { doc, setDoc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, CheckCircle, Zap, Shield, Star, Lock } from "lucide-react";
+import { toast } from "sonner";
 
 export default function RegisterOnboarding() {
-  // State for Wizard Steps: 'register' | 'plan'
   const [step, setStep] = useState<'register' | 'plan'>('register');
   
-  // Form State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // User State (after creation)
   const [createdUser, setCreatedUser] = useState<any>(null);
   
   const router = useRouter();
 
-  // STEP 1: CREATE ACCOUNT
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -49,12 +46,11 @@ export default function RegisterOnboarding() {
       setStep('plan'); // 🚀 Move to Plan Selection instead of Dashboard
 
     } catch (error: any) {
-      alert(error.message);
+      toast.error(error.message);
       setLoading(false);
     }
   };
 
-  // STEP 2: HANDLE PAYMENT (PREMIUM)
   const handlePayment = async () => {
     if (!createdUser) return;
     setLoading(true);
@@ -65,11 +61,10 @@ export default function RegisterOnboarding() {
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY as string,
         email: createdUser.email,
-        amount: 2000 * 100, // ₦2,000
+        amount: 2000 * 100,
         currency: 'NGN',
         metadata: { custom_fields: [{ display_name: "User ID", variable_name: "user_id", value: createdUser.uid }] },
         onSuccess: async (transaction: any) => {
-          // Upgrade to Premium
           try {
             await updateDoc(doc(db, "users", createdUser.uid), {
               subscriptionStatus: 'premium',
@@ -82,23 +77,22 @@ export default function RegisterOnboarding() {
             
           } catch (error) {
             console.error("Error updating profile", error);
-            alert("Payment successful but error updating profile. Please contact support.");
+            toast.error("Payment successful but error updating profile. Please contact support.");
             setLoading(false);
           }
         },
         onCancel: () => {
           setLoading(false);
-          alert("Transaction Cancelled.");
+          toast.error("Transaction Cancelled.");
         }
       });
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Error initializing payment. Please try again.");
+      toast.error("Error initializing payment. Please try again.");
       setLoading(false);
     }
   };
 
-  // STEP 2B: HANDLE FREE PLAN
   const handleFreePlan = () => {
     router.push("/dashboard");
   };
