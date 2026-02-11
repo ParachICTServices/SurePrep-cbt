@@ -84,7 +84,7 @@ const EXAM_TYPES = [
     questions: "Unlimited",
     gradient: "from-teal-800 to-emerald-900",
     icon: Globe,
-    premiumOnly: false,
+    premiumOnly: true,
     glowColor: "bg-teal-400",
     borderColor: "border-teal-700",
     badgeBg: "bg-teal-400 text-white",
