@@ -13,7 +13,8 @@ import {
   Save,
   Filter,
   BookOpen,
-  CheckCircle
+  CheckCircle,
+  Image as ImageIcon
 } from "lucide-react";
 
 interface Question {
@@ -23,6 +24,7 @@ interface Question {
   options: string[];
   correctOption: number;
   explanation?: string;
+  imageURL?: string; 
   createdAt?: any;
   createdBy?: string;
 }
@@ -68,6 +70,7 @@ export default function QuestionBank() {
         setSubjects(sData);
       } catch (error) {
         console.error("Error fetching data:", error);
+        toast.error("Failed to load questions. Please refresh the page.");
       } finally {
         setLoading(false);
       }
@@ -124,7 +127,7 @@ export default function QuestionBank() {
     }
   };
 
-  // 5. Delete Question
+ 
   const handleDeleteClick = (questionId: string) => {
     setConfirmDialog({
       isOpen: true,
@@ -137,9 +140,16 @@ export default function QuestionBank() {
     if (!questionId) return;
 
     try {
+      // Delete
       await deleteDoc(doc(db, "questions", questionId));
+      
+      // Update local state
       setQuestions(prev => prev.filter(q => q.id !== questionId));
+      
       toast.success("Question deleted successfully!");
+      
+ 
+      
     } catch (error) {
       console.error("Error deleting question:", error);
       toast.error("Failed to delete question");
@@ -238,6 +248,12 @@ export default function QuestionBank() {
                       {q.subject}
                     </span>
                     <span className="text-slate-400 text-xs">#{idx + 1}</span>
+                    {q.imageURL && (
+                      <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                        <ImageIcon size={12} />
+                        Has Image
+                      </span>
+                    )}
                   </div>
                   <p className="text-lg font-medium text-slate-900">{q.questionText}</p>
                 </div>
@@ -260,6 +276,21 @@ export default function QuestionBank() {
                   </button>
                 </div>
               </div>
+
+              {/* Question Image (if exists) */}
+              {q.imageURL && (
+                <div className="mb-4">
+                  <img 
+                    src={q.imageURL} 
+                    alt="Question diagram" 
+                    className="max-w-md w-full h-auto rounded-lg border-2 border-slate-200"
+                    onError={(e) => {
+                      console.error("Image failed to load:", q.imageURL);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Options */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
@@ -324,6 +355,21 @@ export default function QuestionBank() {
                   className="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 text-slate-500 capitalize"
                 />
               </div>
+
+              {/* Show existing image if present */}
+              {editingQuestion.imageURL && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Question Image</label>
+                  <img 
+                    src={editingQuestion.imageURL} 
+                    alt="Question" 
+                    className="max-w-md w-full rounded-lg border-2 border-slate-200"
+                  />
+                  <p className="text-xs text-slate-500 mt-2">
+                    Note: Image editing not available. Delete and recreate question to change image.
+                  </p>
+                </div>
+              )}
 
               {/* Question Text */}
               <div>
@@ -418,11 +464,11 @@ export default function QuestionBank() {
         </div>
       )}
       
-      {/* Confirm Delete Dialog */}
+ 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         title="Delete Question?"
-        message="Are you sure you want to delete this question? This action cannot be undone."
+        message="Are you sure you want to delete this question? This action cannot be undone. Note: The associated image will remain in Cloudinary storage."
         confirmText="Delete"
         cancelText="Cancel"
         isDangerous

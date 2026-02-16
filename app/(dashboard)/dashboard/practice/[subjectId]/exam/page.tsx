@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/context/AuthContext";
-import { Loader2, Timer, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Loader2, Timer, CheckCircle, AlertCircle, X, Image as ImageIcon, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
@@ -13,6 +13,7 @@ interface Question {
   options: string[];
   correctOption: number;
   explanation?: string;
+  imageURL?: string; // ADD THIS FIELD
 }
 
 export default function ExamInterface() {
@@ -30,6 +31,7 @@ export default function ExamInterface() {
   const [subjectName, setSubjectName] = useState("");
   const [showExitModal, setShowExitModal] = useState(false);
   const [allowNavigation, setAllowNavigation] = useState(false);
+  const [imageZoomed, setImageZoomed] = useState(false);
 
   // 1. Fetch Questions on Load
   useEffect(() => {
@@ -119,7 +121,7 @@ export default function ExamInterface() {
     };
   }, [submitted, loading, allowNavigation]);
 
-  // 5. Intercept all link clicks on the page
+  // 5. Intercept in-app link clicks
   useEffect(() => {
     if (submitted || loading || allowNavigation) return;
 
@@ -141,7 +143,7 @@ export default function ExamInterface() {
     };
   }, [submitted, loading, allowNavigation]);
 
-  // 6. Handle Option Select
+  // 6. Handle Option 
   const handleSelect = (optionIndex: number) => {
     if (submitted) return;
     setSelectedOptions(prev => ({
@@ -150,7 +152,7 @@ export default function ExamInterface() {
     }));
   };
 
-  // 7. Handle Exit Attempt
+  // 7. Handle Exit 
   const handleExitAttempt = () => {
     setShowExitModal(true);
   };
@@ -178,7 +180,7 @@ export default function ExamInterface() {
     
     setScore(newScore);
     setSubmitted(true);
-    setAllowNavigation(true); // Allow navigation after submission
+    setAllowNavigation(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (user) {
@@ -198,7 +200,8 @@ export default function ExamInterface() {
             options: q.options,
             correctOption: q.correctOption,
             selectedOption: selectedOptions[index] ?? -1,
-            explanation: q.explanation || "No explanation provided."
+            explanation: q.explanation || "No explanation provided.",
+            imageURL: q.imageURL || null 
           }))
         });
         console.log("Score and details saved successfully");
@@ -244,7 +247,6 @@ export default function ExamInterface() {
     );
   }
 
-  // --- RESULT VIEW (After Submission) ---
   if (submitted) {
     const percentage = Math.round((score / questions.length) * 100);
     return (
@@ -282,16 +284,36 @@ export default function ExamInterface() {
     );
   }
 
-  // --- EXAM VIEW ---
+
   const currentQ = questions[currentQIndex];
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Image Zoom Modal */}
+      {imageZoomed && currentQ.imageURL && (
+        <div 
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+          onClick={() => setImageZoomed(false)}
+        >
+          <button
+            onClick={() => setImageZoomed(false)}
+            className="absolute top-4 right-4 bg-white text-slate-900 p-3 rounded-full hover:bg-slate-100 transition"
+          >
+            <X size={24} />
+          </button>
+          <img 
+            src={currentQ.imageURL} 
+            alt="Question diagram (zoomed)" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {/* Exit Confirmation Modal */}
       {showExitModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-200">
-            {/* Header */}
             <div className="bg-gradient-to-br from-red-600 to-red-700 p-6 rounded-t-3xl text-white text-center">
               <div className="bg-white/20 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <AlertCircle size={32} />
@@ -299,7 +321,6 @@ export default function ExamInterface() {
               <h2 className="text-2xl font-bold">Exit Exam?</h2>
             </div>
 
-            {/* Content */}
             <div className="p-6 space-y-4">
               <p className="text-slate-600 text-center leading-relaxed">
                 Are you sure you want to exit this practice session?
@@ -316,7 +337,6 @@ export default function ExamInterface() {
                 </div>
               </div>
 
-              {/* Stats */}
               <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Progress:</span>
@@ -336,7 +356,6 @@ export default function ExamInterface() {
                 </div>
               </div>
 
-              {/* Buttons */}
               <div className="grid grid-cols-2 gap-3 pt-4">
                 <button
                   onClick={cancelExit}
@@ -370,6 +389,12 @@ export default function ExamInterface() {
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-slate-500">Question</span>
           <span className="text-xl font-bold text-slate-900">{currentQIndex + 1}<span className="text-slate-400 text-sm">/{questions.length}</span></span>
+          {currentQ.imageURL && (
+            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+              <ImageIcon size={12} />
+              Diagram
+            </span>
+          )}
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-mono font-bold ${timeLeft < 60 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-700'}`}>
           <Timer size={18} />
@@ -379,9 +404,34 @@ export default function ExamInterface() {
 
       {/* Question Card */}
       <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200 mb-8">
-        <h2 className="text-xl md:text-2xl font-medium text-slate-900 mb-8 leading-relaxed">
+        <h2 className="text-xl md:text-2xl font-medium text-slate-900 mb-6 leading-relaxed">
           {currentQ.questionText}
         </h2>
+
+        {/* Question Image (if exists) */}
+        {currentQ.imageURL && (
+          <div className="mb-8">
+            <div className="relative group inline-block">
+              <img 
+                src={currentQ.imageURL} 
+                alt="Question diagram" 
+                className="max-w-full md:max-w-2xl w-full h-auto rounded-xl border-2 border-slate-200 cursor-pointer hover:border-blue-400 transition"
+                onClick={() => setImageZoomed(true)}
+                onError={(e) => {
+                  console.error("Image failed to load:", currentQ.imageURL);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              <button
+                onClick={() => setImageZoomed(true)}
+                className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold opacity-0 group-hover:opacity-100 transition flex items-center gap-1 shadow-lg"
+              >
+                <ZoomIn size={14} />
+                Click to Enlarge
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-3">
           {currentQ.options.map((option, idx) => (

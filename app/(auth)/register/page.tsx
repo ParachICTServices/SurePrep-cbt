@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
 import { auth, db } from "@/app/lib/firebase";
 import { doc, setDoc, updateDoc, increment, addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, CheckCircle, Zap, Shield, Star, Lock, GraduationCap, Briefcase, School, Coins, TrendingUp, Beaker, Palette, Calculator } from "lucide-react";
+import { Loader2, CheckCircle, Zap, Shield, Star, Lock, GraduationCap, Briefcase, School, Coins, TrendingUp, Beaker, Palette, Calculator, Mail, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 type ExamCategory = "senior" | "junior" | "professional";
@@ -19,7 +19,7 @@ const EXAM_CATEGORIES = [
     icon: GraduationCap,
     color: "bg-emerald-100 text-emerald-700 border-emerald-200",
     exams: ["JAMB/UTME", "WAEC/SSCE", "NECO"],
-    hasSpecialization: true // Senior students need specialization
+    hasSpecialization: true
   },
   {
     id: "junior" as const,
@@ -76,7 +76,6 @@ const SPECIALIZATIONS = [
   }
 ];
 
-// Credit packages remain the same...
 const STARTER_CREDIT_PACKAGES = [
   {
     id: 'starter-free',
@@ -109,7 +108,7 @@ const STARTER_CREDIT_PACKAGES = [
 ];
 
 export default function RegisterOnboarding() {
-  const [step, setStep] = useState<'register' | 'specialization' | 'plan'>('register');
+  const [step, setStep] = useState<'register' | 'specialization' | 'verify' | 'plan'>('register');
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -118,6 +117,7 @@ export default function RegisterOnboarding() {
   const [specialization, setSpecialization] = useState<Specialization | "">("");
   const [loading, setLoading] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(STARTER_CREDIT_PACKAGES[1]);
+  const [resendingEmail, setResendingEmail] = useState(false);
   
   const [createdUser, setCreatedUser] = useState<any>(null);
   
@@ -134,56 +134,212 @@ export default function RegisterOnboarding() {
     if (selectedCategory?.hasSpecialization) {
       setStep('specialization');
     } else {
-      // For junior and professional, set general specialization and proceed to register
       setSpecialization('general');
       handleRegister();
     }
   };
 
-  const handleRegister = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    
-    if (!examCategory) {
-      toast.error("Please select your exam category");
-      return;
-    }
+ // Add this improved error handling to your existing registration file
 
-    // Check if specialization is required
-    const selectedCategory = EXAM_CATEGORIES.find(cat => cat.id === examCategory);
-    if (selectedCategory?.hasSpecialization && !specialization) {
-      toast.error("Please select your subject specialization");
-      return;
-    }
-    
-    setLoading(true);
+// Replace the handleRegister function with this version:
 
+const handleRegister = async (e?: React.FormEvent) => {
+  if (e) e.preventDefault();
+  
+  if (!examCategory) {
+    toast.error("Please select your exam category");
+    return;
+  }
+
+  const selectedCategory = EXAM_CATEGORIES.find(cat => cat.id === examCategory);
+  if (selectedCategory?.hasSpecialization && !specialization) {
+    toast.error("Please select your subject specialization");
+    return;
+  }
+  
+  setLoading(true);
+
+  try {
+    // 1. Create user account
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // 2. Update profile
+    await updateProfile(user, { displayName: name });
+
+    // 3. Send verification email with improved error handling
+    let emailSent = false;
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      await updateProfile(user, { displayName: name });
-
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: name,
-        examCategory: examCategory as ExamCategory,
-        specialization: specialization || 'general',
-        subscriptionStatus: "free",
-        credits: 0,
-        totalCreditsEarned: 0,
-        createdAt: new Date().toISOString(),
-      });
-
-      setCreatedUser(user);
-      setLoading(false);
-      setStep('plan'); 
-
-    } catch (error: any) {
-      toast.error(error.message);
-      setLoading(false);
+      const actionCodeSettings = {
+        url: `${window.location.origin}/dashboard`,
+        handleCodeInApp: false,
+      };
+      
+      await sendEmailVerification(user, actionCodeSettings);
+      emailSent = true;
+      toast.success("Verification email sent! Check your inbox.");
+    } catch (emailError: any) {
+      console.error("Email verification error:", emailError);
+      
+      // Log detailed error for debugging
+      console.log("Error code:", emailError.code);
+      console.log("Error message:", emailError.message);
+      
+      // Show specific error messages
+      if (emailError.code === "auth/invalid-email") {
+        toast.error("Invalid email address format");
+      } else if (emailError.code === "auth/user-disabled") {
+        toast.error("This account has been disabled");
+      } else if (emailError.code === "auth/too-many-requests") {
+        toast.error("Too many requests. Please try again later.");
+      } else {
+        // Still create account but warn about email
+        toast.warning("Account created but verification email failed. You can resend it from the next page.");
+      }
     }
-  };
+
+    // 4. Create user document
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      email: user.email,
+      displayName: name,
+      examCategory: examCategory as ExamCategory,
+      specialization: specialization || 'general',
+      subscriptionStatus: "free",
+      credits: 0,
+      totalCreditsEarned: 0,
+      emailVerified: false,
+      verificationEmailSent: emailSent, // Track if email was sent
+      createdAt: new Date().toISOString(),
+    });
+
+    setCreatedUser(user);
+    setLoading(false);
+    setStep('verify');
+
+  } catch (error: any) {
+    console.error("Registration error:", error);
+    
+    // Detailed error logging
+    console.log("Error code:", error.code);
+    console.log("Error message:", error.message);
+    
+    if (error.code === "auth/email-already-in-use") {
+      toast.error("This email is already registered. Please log in.");
+    } else if (error.code === "auth/weak-password") {
+      toast.error("Password is too weak. Use at least 6 characters.");
+    } else if (error.code === "auth/invalid-email") {
+      toast.error("Invalid email address.");
+    } else if (error.code === "auth/operation-not-allowed") {
+      toast.error("Email/password sign-in is not enabled. Please contact support.");
+    } else {
+      toast.error("Registration failed: " + error.message);
+    }
+    setLoading(false);
+  }
+};
+
+// Replace the handleResendVerification function with this version:
+
+const handleResendVerification = async () => {
+  if (!createdUser) {
+    toast.error("No user found. Please try registering again.");
+    return;
+  }
+  
+  setResendingEmail(true);
+
+  try {
+    // Force reload user to get latest state
+    await createdUser.reload();
+    
+    // Check if already verified
+    if (createdUser.emailVerified) {
+      toast.success("Email already verified!");
+      await updateDoc(doc(db, "users", createdUser.uid), {
+        emailVerified: true,
+      });
+      setStep('plan');
+      setResendingEmail(false);
+      return;
+    }
+
+
+    const actionCodeSettings = {
+      url: `${window.location.origin}/dashboard`,
+      handleCodeInApp: false,
+    };
+    
+
+    await sendEmailVerification(createdUser, actionCodeSettings);
+
+    await updateDoc(doc(db, "users", createdUser.uid), {
+      lastVerificationEmailSent: new Date().toISOString(),
+      verificationEmailResendCount: increment(1),
+    });
+    
+    toast.success("Verification email sent! Check your inbox and spam folder.");
+    
+  } catch (error: any) {
+    console.error("Resend error:", error);
+    console.log("Error code:", error.code);
+    console.log("Error message:", error.message);
+    
+    if (error.code === "auth/too-many-requests") {
+      toast.error("Too many requests. Please wait 5 minutes before trying again.");
+    } else if (error.code === "auth/invalid-action-code") {
+      toast.error("Verification session expired. Please log in and request a new verification email.");
+    } else if (error.code === "auth/user-disabled") {
+      toast.error("This account has been disabled. Please contact support.");
+    } else if (error.code === "auth/user-not-found") {
+      toast.error("User not found. Please try registering again.");
+    } else {
+      toast.error("Failed to send email. Please check Firebase configuration or try again later.");
+    }
+  } finally {
+    setResendingEmail(false);
+  }
+};
+
+
+
+const handleCheckVerification = async () => {
+  if (!createdUser) {
+    toast.error("No user found. Please try registering again.");
+    return;
+  }
+  
+  setLoading(true);
+  
+  try {
+
+    await createdUser.reload();
+    
+    if (createdUser.emailVerified) {
+     
+      await updateDoc(doc(db, "users", createdUser.uid), {
+        emailVerified: true,
+        emailVerifiedAt: new Date().toISOString(),
+      });
+      
+      toast.success("Email verified successfully! 🎉");
+      setStep('plan');
+    } else {
+      toast.error("Email not verified yet. Please check your inbox and click the verification link first.");
+    }
+  } catch (error: any) {
+    console.error("Verification check error:", error);
+    console.log("Error code:", error.code);
+    
+    if (error.code === "auth/user-token-expired") {
+      toast.error("Session expired. Please log in and request a new verification email.");
+    } else {
+      toast.error("Failed to check verification status. Please try again.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handlePurchaseCredits = async () => {
     if (!createdUser) return;
@@ -267,7 +423,8 @@ export default function RegisterOnboarding() {
         {/* Progress Bar */}
         <div className="flex justify-center mb-8 gap-4">
           <div className={`h-2 w-12 rounded-full transition-colors ${step === 'register' ? 'bg-emerald-600' : 'bg-emerald-200'}`}></div>
-          <div className={`h-2 w-12 rounded-full transition-colors ${step === 'specialization' ? 'bg-emerald-600' : step === 'plan' ? 'bg-emerald-200' : 'bg-slate-200'}`}></div>
+          <div className={`h-2 w-12 rounded-full transition-colors ${step === 'specialization' ? 'bg-emerald-600' : (step === 'verify' || step === 'plan') ? 'bg-emerald-200' : 'bg-slate-200'}`}></div>
+          <div className={`h-2 w-12 rounded-full transition-colors ${step === 'verify' ? 'bg-emerald-600' : step === 'plan' ? 'bg-emerald-200' : 'bg-slate-200'}`}></div>
           <div className={`h-2 w-12 rounded-full transition-colors ${step === 'plan' ? 'bg-emerald-600' : 'bg-slate-200'}`}></div>
         </div>
 
@@ -443,18 +600,96 @@ export default function RegisterOnboarding() {
                 disabled={loading || !specialization}
                 className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-3 rounded-xl transition flex items-center justify-center shadow-lg shadow-emerald-200"
               >
-                {loading ? <Loader2 className="animate-spin" /> : "Continue to Credit Selection"}
+                {loading ? <Loader2 className="animate-spin" /> : "Create Account & Verify Email"}
               </button>
             </div>
           </div>
         )}
 
-       {/* STEP 3: CREDIT PACKAGE SELECTION */}
+        {/* STEP 3: EMAIL VERIFICATION */}
+        {step === 'verify' && (
+          <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl p-8 border border-slate-100 animate-in fade-in slide-in-from-right-4">
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="text-blue-600" size={40} />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Verify Your Email</h2>
+              <p className="text-slate-500 text-sm">
+                We've sent a verification link to <strong className="text-slate-900">{email}</strong>
+              </p>
+            </div>
+
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
+              <h3 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                <AlertCircle size={20} />
+                Please Check Your Email
+              </h3>
+              <ol className="space-y-2 text-sm text-blue-800">
+                <li className="flex gap-2">
+                  <span className="font-bold">1.</span>
+                  <span>Open your email inbox (check spam folder if needed)</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold">2.</span>
+                  <span>Click the "Verify Email" button in the email</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-bold">3.</span>
+                  <span>Come back here and click "I've Verified My Email"</span>
+                </li>
+              </ol>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleCheckVerification}
+                disabled={loading}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-200"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={20} />
+                    I've Verified My Email
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleResendVerification}
+                disabled={resendingEmail}
+                className="w-full bg-slate-100 hover:bg-slate-200 disabled:bg-slate-50 text-slate-700 font-medium py-3 rounded-xl transition flex items-center justify-center gap-2"
+              >
+                {resendingEmail ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail size={18} />
+                    Resend Verification Email
+                  </>
+                )}
+              </button>
+            </div>
+
+            <p className="text-xs text-center text-slate-500 mt-6">
+              Didn't receive the email? Check your spam folder or click resend
+            </p>
+          </div>
+        )}
+
+       {/* STEP 4: CREDIT PACKAGE SELECTION */}
 {step === 'plan' && (
   <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500">
     <div className="text-center mb-10">
       <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-bold mb-4">
-        <Star size={16} fill="currentColor" /> Account Created Successfully
+        <Star size={16} fill="currentColor" /> Email Verified Successfully!
       </div>
       <h2 className="text-3xl font-bold text-slate-900">Choose a Starting Credit Pack</h2>
       <p className="text-slate-500">Credits are used to take exams. Select a pack to get started.</p>

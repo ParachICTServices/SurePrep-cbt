@@ -3,13 +3,13 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { db } from "@/app/lib/firebase";
 import { collection, addDoc, setDoc, doc, serverTimestamp, getDocs, query, writeBatch } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { uploadToCloudinary } from "@/app/lib/imageUpload";
 import { PlusCircle, Save, FileText, LayoutGrid, Loader2, Upload, FileUp, CheckCircle, AlertCircle, Beaker, Palette, Calculator, Globe, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ContentManager() {
   const { user } = useAuth();
-  const storage = getStorage();
+  // REMOVED: const storage = getStorage(); ← This was causing the error
   
   // State
   const [activeTab, setActiveTab] = useState<'subject' | 'question' | 'bulk'>('question');
@@ -101,14 +101,16 @@ export default function ContentManager() {
     setBulkImagePreviews(newPreviews);
   };
 
+  // FIXED: Now uses Cloudinary instead of Firebase Storage
   const uploadImage = async (file: File, questionId: string): Promise<string> => {
-    const timestamp = Date.now();
-    const fileName = `questions/${questionId}_${timestamp}.${file.name.split('.').pop()}`;
-    const storageRef = ref(storage, fileName);
-    
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+    try {
+      // Upload to Cloudinary
+      const imageURL = await uploadToCloudinary(file, 'questions');
+      return imageURL;
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+      throw new Error('Failed to upload image. Please try again.');
+    }
   };
 
   const handleCreateSubject = async (e: React.FormEvent) => {
@@ -144,10 +146,12 @@ export default function ContentManager() {
 
       let imageURL = "";
       
-      // If there's an image, upload it first
+      // If there's an image, upload it to Cloudinary
       if (questionImage) {
-        const tempId = `temp_${Date.now()}`;
+        toast.info("Uploading image...");
+        const tempId = `question_${Date.now()}`;
         imageURL = await uploadImage(questionImage, tempId);
+        toast.success("Image uploaded!");
       }
 
       await addDoc(collection(db, "questions"), {
@@ -168,9 +172,9 @@ export default function ContentManager() {
       setCorrectOpt(0);
       setQuestionImage(null);
       setQuestionImagePreview("");
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Error adding question");
+      toast.error(e.message || "Error adding question");
     } finally {
       setLoading(false);
     }
@@ -279,14 +283,23 @@ export default function ContentManager() {
 
     setLoading(true);
     try {
-      const batch = writeBatch(db);
-      
       // Upload images first and get URLs
+      const imageCount = Object.keys(bulkImages).length;
+      if (imageCount > 0) {
+        toast.info(`Uploading ${imageCount} image(s)...`);
+      }
+
       const imageUploadPromises = parsedQuestions.map(async (q, idx) => {
         if (bulkImages[idx]) {
-          const tempId = `bulk_${Date.now()}_${idx}`;
-          const url = await uploadImage(bulkImages[idx], tempId);
-          return { index: idx, url };
+          try {
+            const tempId = `bulk_${Date.now()}_${idx}`;
+            const url = await uploadImage(bulkImages[idx], tempId);
+            return { index: idx, url };
+          } catch (error) {
+            console.error(`Failed to upload image for question ${idx + 1}:`, error);
+            toast.error(`Failed to upload image for question ${idx + 1}`);
+            return { index: idx, url: null };
+          }
         }
         return { index: idx, url: null };
       });
@@ -297,7 +310,13 @@ export default function ContentManager() {
         imageURLs[result.index] = result.url;
       });
       
-      // Add questions to batch with their image URLs
+      if (imageCount > 0) {
+        toast.success("Images uploaded!");
+      }
+
+      // Add questions to Firestore batch
+      const batch = writeBatch(db);
+      
       parsedQuestions.forEach((q, idx) => {
         const docRef = doc(collection(db, "questions"));
         batch.set(docRef, {
@@ -320,9 +339,9 @@ export default function ContentManager() {
       setBulkErrors([]);
       setBulkImages({});
       setBulkImagePreviews({});
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Error uploading questions");
+      toast.error(e.message || "Error uploading questions");
     } finally {
       setLoading(false);
     }
