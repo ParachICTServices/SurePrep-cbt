@@ -139,7 +139,7 @@ export default function PracticeSelection() {
   const userExamCategory = userData?.examCategory || "senior";
   const userCredits = userData?.credits || 0;
   
-  // READ SPECIALIZATION DIRECTLY FROM FIRESTORE (bypassing AuthContext)
+  
   const [userSpecialization, setUserSpecialization] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -155,10 +155,9 @@ export default function PracticeSelection() {
       if (!user) return;
       
       try {
-        console.log("==========================================");
-        console.log("🔥 DIRECT FIRESTORE READ - Bypassing AuthContext");
+
         
-        // Read user document directly from Firestore
+      
         const userDocRef = doc(db, "users", user.uid);
         const userDocSnap = await getDoc(userDocRef);
         
@@ -166,12 +165,11 @@ export default function PracticeSelection() {
           const freshUserData = userDocSnap.data();
           const specialization = freshUserData.specialization || null;
           
-          console.log("📊 Fresh user data from Firestore:", freshUserData);
-          console.log("📚 Specialization from Firestore:", specialization);
+       
           
           setUserSpecialization(specialization);
           
-          // Now fetch and filter subjects
+      
           const allSubjectsSnapshot = await getDocs(collection(db, "subjects"));
           const allSubjects = allSubjectsSnapshot.docs.map((docSnap) => {
             const data = docSnap.data();
@@ -183,22 +181,20 @@ export default function PracticeSelection() {
             };
           });
           
-          console.log("📚 Total subjects from DB:", allSubjects.length);
+   
           
-          // Filter based on specialization
           let filteredSubjects: Subject[] = [];
           
           if (!specialization || specialization === 'general') {
             filteredSubjects = allSubjects;
-            console.log("⚠️ NO SPECIALIZATION - Showing all subjects");
+   
           } else {
             filteredSubjects = allSubjects.filter(subject => {
               const matches = subject.category === specialization || subject.category === 'general';
-              console.log(`  ${subject.name} (${subject.category}) - ${matches ? '✅' : '❌'}`);
+      
               return matches;
             });
-            console.log(`✅ FILTERED to ${specialization} + general`);
-            console.log("📋 Showing subjects:", filteredSubjects.map(s => s.name).join(", "));
+     
           }
           
           // Sort
@@ -207,9 +203,7 @@ export default function PracticeSelection() {
             if (a.category !== 'general' && b.category === 'general') return 1;
             return a.name.localeCompare(b.name);
           });
-          
-          console.log("📊 FINAL count:", filteredSubjects.length);
-          console.log("==========================================");
+
           
           setSubjects(filteredSubjects);
         }
@@ -240,7 +234,7 @@ export default function PracticeSelection() {
     if (userCredits < subjectCost) {
       router.push("/dashboard/buy-credits");
     } else {
-      router.push(`/dashboard/practice/${subjectId}/start?cost=${subjectCost}`);
+       router.push(`/dashboard/practice/${subjectId}/topics`);
     }
   };
 

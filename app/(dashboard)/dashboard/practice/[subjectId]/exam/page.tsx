@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/context/AuthContext";
+import { MathText } from "@/app/components/MathText"; // ← ADD THIS
 import { Loader2, Timer, CheckCircle, AlertCircle, X, Image as ImageIcon, ZoomIn } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 interface Question {
   id: string;
@@ -13,13 +14,16 @@ interface Question {
   options: string[];
   correctOption: number;
   explanation?: string;
-  imageURL?: string; // ADD THIS FIELD
+  imageURL?: string;
 }
 
 export default function ExamInterface() {
   const { subjectId } = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, userData } = useAuth();
+  
+  const topicFilter = searchParams.get('topic');
   
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -33,11 +37,19 @@ export default function ExamInterface() {
   const [allowNavigation, setAllowNavigation] = useState(false);
   const [imageZoomed, setImageZoomed] = useState(false);
 
-  // 1. Fetch Questions on Load
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        console.log("Fetching questions for subject:", subjectId);
+ function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+ useEffect(() => {
+  const fetchQuestions = async () => {
+    try {
+      console.log("Fetching questions for subject:", subjectId);
         
         const subjectDocRef = doc(db, "subjects", subjectId as string);
         const subjectDoc = await getDoc(subjectDocRef);
@@ -49,27 +61,58 @@ export default function ExamInterface() {
           console.log("Subject not found, using ID as name");
           setSubjectName(subjectId as string);
         }
-        
-        const q = query(collection(db, "questions"), where("subject", "==", subjectId));
-        const snapshot = await getDocs(q);
-        
-        console.log("Questions found:", snapshot.docs.length);
-        
-        const fetchedData = snapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
-        } as Question));
-        
-        setQuestions(fetchedData);
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-      } finally {
-        setLoading(false);
+      
+      console.log("=== FETCH DEBUG ===");
+      console.log("Subject ID:", subjectId);
+      console.log("Topic Filter:", topicFilter);
+      
+      let q;
+      
+      if (topicFilter) {
+        console.log("🔎 Filtering by topic:", topicFilter);
+        q = query(
+          collection(db, "questions"),
+          where("subject", "==", subjectId),
+          where("topics", "array-contains", topicFilter)
+        );
+      } else {
+        console.log("📚 Fetching ALL questions");
+        q = query(
+          collection(db, "questions"),
+          where("subject", "==", subjectId)
+        );
       }
-    };
+      
+      const snapshot = await getDocs(q);
+      console.log(`✅ Fetched ${snapshot.size} questions`);
+      
+      snapshot.docs.slice(0, 3).forEach((doc, i) => {
+        const data = doc.data();
+        console.log(`Question ${i + 1}:`, {
+          text: data.questionText?.substring(0, 40) + "...",
+          topics: data.topics,
+          hasTopicsField: 'topics' in data,
+          isArray: Array.isArray(data.topics)
+        });
+      });
+      
+  const fetchedData = snapshot.docs.map(doc => ({ 
+  id: doc.id, 
+  ...doc.data() 
+} as Question));
 
-    if (subjectId) fetchQuestions();
-  }, [subjectId]);
+setQuestions(shuffleArray(fetchedData));
+    } catch (error) {
+      console.error("❌ Error fetching questions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (subjectId) fetchQuestions();
+}, [subjectId, topicFilter]);
+
+
 
   // 2. Timer Logic
   useEffect(() => {
@@ -89,7 +132,7 @@ export default function ExamInterface() {
     return () => clearInterval(timer);
   }, [submitted, loading, questions.length]);
 
-  // 3. Prevent accidental page exit (browser close/refresh)
+  // 3. Prevent page refresh
   useEffect(() => {
     if (submitted || loading || allowNavigation) return;
 
@@ -102,7 +145,7 @@ export default function ExamInterface() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [submitted, loading, allowNavigation]);
 
-  // 4. Prevent browser back button navigation
+  // 4. Prevent browser back button
   useEffect(() => {
     if (submitted || loading || allowNavigation) return;
 
@@ -143,7 +186,7 @@ export default function ExamInterface() {
     };
   }, [submitted, loading, allowNavigation]);
 
-  // 6. Handle Option 
+  // 6. Handle Option Selection
   const handleSelect = (optionIndex: number) => {
     if (submitted) return;
     setSelectedOptions(prev => ({
@@ -189,6 +232,7 @@ export default function ExamInterface() {
           userId: user.uid,
           subject: subjectName || subjectId,
           subjectId: subjectId,
+          topic: topicFilter || "all-topics",
           score: newScore,
           totalQuestions: questions.length,
           percentage: Math.round((newScore / questions.length) * 100),
@@ -204,7 +248,6 @@ export default function ExamInterface() {
             imageURL: q.imageURL || null 
           }))
         });
-        console.log("Score and details saved successfully");
       } catch (error) {
         console.error("Error saving score:", error);
       }
@@ -232,17 +275,33 @@ export default function ExamInterface() {
         <AlertCircle className="mx-auto text-amber-500 mb-4" size={48} />
         <h2 className="text-2xl font-bold text-slate-900 mb-2">No Questions Found</h2>
         <p className="text-slate-500 mb-6">
-          There are no questions available for <strong className="capitalize">{subjectName || subjectId}</strong> yet.
+          {topicFilter ? (
+            <>
+              There are no questions available for <strong>{topicFilter.replace(/-/g, ' ')}</strong> in <strong className="capitalize">{subjectName || subjectId}</strong> yet.
+            </>
+          ) : (
+            <>
+              There are no questions available for <strong className="capitalize">{subjectName || subjectId}</strong> yet.
+            </>
+          )}
         </p>
         <p className="text-sm text-slate-400 mb-6">
-          Please contact an administrator to add questions for this subject.
+          Please contact an administrator to add questions{topicFilter ? ' for this topic' : ''}.
         </p>
-        <Link 
-          href="/dashboard/practice" 
-          className="inline-block px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition"
-        >
-          Go Back to Practice Centre
-        </Link>
+        <div className="flex gap-3 justify-center">
+          <Link 
+            href={`/dashboard/practice/${subjectId}/topics`}
+            className="inline-block px-6 py-3 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition"
+          >
+            ← Choose Different Topic
+          </Link>
+          <Link 
+            href="/dashboard/practice" 
+            className="inline-block px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition"
+          >
+            Practice Centre
+          </Link>
+        </div>
       </div>
     );
   }
@@ -272,18 +331,26 @@ export default function ExamInterface() {
           </p>
 
           <div className="grid grid-cols-2 gap-4 mb-8">
-            <Link href="/dashboard/practice" className="py-3 px-6 rounded-xl border border-slate-200 font-medium hover:bg-slate-50 transition">
-              Try Another Subject
+            <Link 
+              href={`/dashboard/practice/${subjectId}/topics`}
+              className="py-3 px-6 rounded-xl border border-slate-200 font-medium hover:bg-slate-50 transition"
+            >
+              Choose Topic
             </Link>
-            <Link href={`/dashboard/practice/${subjectId}/start?cost=5`} className="py-3 px-6 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition">
-              Retake Exam
+            <Link 
+              href={topicFilter 
+                ? `/dashboard/practice/${subjectId}/start?topic=${topicFilter}&cost=5`
+                : `/dashboard/practice/${subjectId}/start?cost=5`
+              }
+              className="py-3 px-6 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition"
+            >
+              Retake Practice
             </Link>
           </div>
         </div>
       </div>
     );
   }
-
 
   const currentQ = questions[currentQIndex];
 
@@ -402,11 +469,12 @@ export default function ExamInterface() {
         </div>
       </div>
 
-      {/* Question Card */}
+      {/* Question Card - ← USE MathText HERE */}
       <div className="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200 mb-8">
-        <h2 className="text-xl md:text-2xl font-medium text-slate-900 mb-6 leading-relaxed">
-          {currentQ.questionText}
-        </h2>
+        <MathText 
+          text={currentQ.questionText} 
+          className="text-xl md:text-2xl font-medium text-slate-900 mb-6 leading-relaxed"
+        />
 
         {/* Question Image (if exists) */}
         {currentQ.imageURL && (
@@ -433,6 +501,7 @@ export default function ExamInterface() {
           </div>
         )}
 
+        {/* Options - ← USE MathText HERE */}
         <div className="space-y-3">
           {currentQ.options.map((option, idx) => (
             <button
@@ -445,12 +514,12 @@ export default function ExamInterface() {
                 }
               `}
             >
-              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border flex-shrink-0
                  ${selectedOptions[currentQIndex] === idx ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-500 border-slate-300'}
               `}>
                 {String.fromCharCode(65 + idx)}
               </span>
-              {option}
+              <MathText text={option} className="flex-1" />
             </button>
           ))}
         </div>

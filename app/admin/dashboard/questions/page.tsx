@@ -4,6 +4,7 @@ import { collection, getDocs, query, orderBy, doc, updateDoc, deleteDoc } from "
 import { db } from "@/app/lib/firebase";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
+import { MathText } from "@/app/components/MathText"; // ← ADD THIS
 import { 
   Loader2, 
   Search, 
@@ -140,16 +141,9 @@ export default function QuestionBank() {
     if (!questionId) return;
 
     try {
-      // Delete
       await deleteDoc(doc(db, "questions", questionId));
-      
-      // Update local state
       setQuestions(prev => prev.filter(q => q.id !== questionId));
-      
       toast.success("Question deleted successfully!");
-      
- 
-      
     } catch (error) {
       console.error("Error deleting question:", error);
       toast.error("Failed to delete question");
@@ -255,7 +249,8 @@ export default function QuestionBank() {
                       </span>
                     )}
                   </div>
-                  <p className="text-lg font-medium text-slate-900">{q.questionText}</p>
+                  {/* ← CHANGE: Use MathText instead of plain <p> */}
+                  <MathText text={q.questionText} className="text-lg font-medium text-slate-900" />
                 </div>
                 
                 {/* Action Buttons */}
@@ -292,7 +287,7 @@ export default function QuestionBank() {
                 </div>
               )}
 
-              {/* Options */}
+              {/* Options - ← CHANGE: Use MathText for each option */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                 {q.options.map((opt, optIdx) => (
                   <div
@@ -308,17 +303,17 @@ export default function QuestionBank() {
                     }`}>
                       {String.fromCharCode(65 + optIdx)}
                     </span>
-                    {opt}
+                    <MathText text={opt} className="flex-1" />
                     {optIdx === q.correctOption && <CheckCircle size={14} className="ml-auto text-emerald-600" />}
                   </div>
                 ))}
               </div>
 
-              {/* Explanation */}
+              {/* Explanation - ← CHANGE: Use MathText */}
               {q.explanation && (
                 <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
                   <p className="text-xs font-bold text-blue-900 mb-1">Explanation:</p>
-                  <p className="text-sm text-blue-800">{q.explanation}</p>
+                  <MathText text={q.explanation} className="text-sm text-blue-800" />
                 </div>
               )}
             </div>
@@ -373,13 +368,23 @@ export default function QuestionBank() {
 
               {/* Question Text */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Question</label>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Question
+                  <span className="ml-2 text-xs font-normal text-slate-500">
+                    Use $...$ for math: <code className="bg-slate-100 px-1 rounded">$x^2 + 5$</code>
+                  </span>
+                </label>
                 <textarea
                   rows={3}
-                  className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
                   value={editForm.questionText}
                   onChange={(e) => setEditForm({ ...editForm, questionText: e.target.value })}
                 />
+                {/* Live preview */}
+                <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-xs text-slate-500 mb-1">Preview:</p>
+                  <MathText text={editForm.questionText} className="text-sm text-slate-900" />
+                </div>
               </div>
 
               {/* Options */}
@@ -387,24 +392,30 @@ export default function QuestionBank() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">Options</label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {editForm.options.map((opt, idx) => (
-                    <div key={idx} className="relative">
-                      <span className="absolute left-3 top-3 text-slate-400 font-bold text-xs">
-                        {String.fromCharCode(65 + idx)}
-                      </span>
-                      <input
-                        type="text"
-                        className={`w-full pl-8 p-3 border rounded-xl outline-none ${
-                          editForm.correctOption === idx
-                            ? 'border-emerald-500 bg-emerald-50 focus:ring-2 focus:ring-emerald-500'
-                            : 'border-slate-300 focus:ring-2 focus:ring-slate-400'
-                        }`}
-                        value={opt}
-                        onChange={(e) => {
-                          const newOpts = [...editForm.options];
-                          newOpts[idx] = e.target.value;
-                          setEditForm({ ...editForm, options: newOpts });
-                        }}
-                      />
+                    <div key={idx}>
+                      <div className="relative">
+                        <span className="absolute left-3 top-3 text-slate-400 font-bold text-xs">
+                          {String.fromCharCode(65 + idx)}
+                        </span>
+                        <input
+                          type="text"
+                          className={`w-full pl-8 p-3 border rounded-xl outline-none font-mono text-sm ${
+                            editForm.correctOption === idx
+                              ? 'border-emerald-500 bg-emerald-50 focus:ring-2 focus:ring-emerald-500'
+                              : 'border-slate-300 focus:ring-2 focus:ring-slate-400'
+                          }`}
+                          value={opt}
+                          onChange={(e) => {
+                            const newOpts = [...editForm.options];
+                            newOpts[idx] = e.target.value;
+                            setEditForm({ ...editForm, options: newOpts });
+                          }}
+                        />
+                      </div>
+                      {/* Option preview */}
+                      <div className="mt-1 p-2 bg-slate-50 rounded text-xs">
+                        <MathText text={opt} />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -436,10 +447,16 @@ export default function QuestionBank() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">Explanation (Optional)</label>
                 <input
                   type="text"
-                  className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
                   value={editForm.explanation}
                   onChange={(e) => setEditForm({ ...editForm, explanation: e.target.value })}
                 />
+                {editForm.explanation && (
+                  <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-xs text-slate-500 mb-1">Preview:</p>
+                    <MathText text={editForm.explanation} className="text-sm text-slate-900" />
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}
@@ -464,7 +481,6 @@ export default function QuestionBank() {
         </div>
       )}
       
- 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         title="Delete Question?"

@@ -84,10 +84,7 @@ export default function SettingsPage() {
       const category = (userData?.examCategory as ExamCategory) || "senior";
       const spec = ((userData as any)?.specialization as Specialization) || "general";
       
-      console.log("🔍 SETTINGS - Initial userData:", userData);
-      console.log("📊 SETTINGS - Exam Category:", category);
-      console.log("📚 SETTINGS - Specialization from userData:", spec);
-      console.log("📚 SETTINGS - Has specialization field?:", 'specialization' in userData);
+    
       
       setSelectedCategory(category);
       setSelectedSpecialization(spec);
@@ -122,16 +119,9 @@ export default function SettingsPage() {
         updates.specialization = 'general';
       }
 
-      console.log("==========================================");
-      console.log("💾 ATTEMPTING TO SAVE:");
-      console.log("User ID:", user.uid);
-      console.log("Updates object:", updates);
-      console.log("Selected Specialization:", selectedSpecialization);
-      console.log("==========================================");
-
       // Save to Firestore
       await updateDoc(doc(db, "users", user.uid), updates);
-      console.log("✅ updateDoc completed successfully");
+    
       
       // Wait a moment for Firestore to propagate
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -139,14 +129,7 @@ export default function SettingsPage() {
       // Verify the save by reading back from Firestore
       const verifyDoc = await getDoc(doc(db, "users", user.uid));
       const savedData = verifyDoc.data();
-      
-      console.log("==========================================");
-      console.log("✅ VERIFICATION - Reading back from Firestore:");
-      console.log("Full document:", savedData);
-      console.log("Saved examCategory:", savedData?.examCategory);
-      console.log("Saved specialization:", savedData?.specialization);
-      console.log("Has specialization field?:", savedData && 'specialization' in savedData);
-      console.log("==========================================");
+
       
       setVerifiedData(savedData);
       setSaveSuccess(true);
@@ -158,10 +141,7 @@ export default function SettingsPage() {
       // setTimeout(() => { window.location.href = "/dashboard/practice"; }, 2000);
       
     } catch (error) {
-      console.error("==========================================");
-      console.error("❌ ERROR SAVING:");
-      console.error(error);
-      console.error("==========================================");
+      console.error("Error saving settings:", error);
       toast.error("Failed to update settings");
       setSaving(false);
     } finally {
@@ -170,21 +150,21 @@ export default function SettingsPage() {
   };
 
   const handleCategoryChange = (categoryId: ExamCategory) => {
-    console.log("📝 Category changed to:", categoryId);
+   
     setSelectedCategory(categoryId);
     
     // If switching to junior or professional, set specialization to general
     const category = EXAM_CATEGORIES.find(cat => cat.id === categoryId);
     if (!category?.hasSpecialization) {
-      console.log("⚠️ Non-senior category, setting specialization to general");
+     
       setSelectedSpecialization('general');
     }
   };
 
   const handleSpecializationChange = (specId: Specialization) => {
-    console.log("📚 Specialization BUTTON CLICKED:", specId);
+  
     setSelectedSpecialization(specId);
-    console.log("📚 State should now be:", specId);
+
   };
 
   return (

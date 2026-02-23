@@ -1,10 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
 
-/**
- * Convert Firebase Timestamp to a readable date string
- * @param timestamp - Firebase Timestamp object or milliseconds
- * @returns Formatted date string or 'N/A'
- */
 export const formatFirebaseDate = (timestamp: any): string => {
   if (!timestamp) return 'N/A';
 
@@ -40,9 +35,7 @@ export const formatFirebaseDate = (timestamp: any): string => {
   }
 };
 
-/**
- * Convert Firebase Timestamp to milliseconds for storage/comparison
- */
+
 export const firebaseTimestampToMillis = (timestamp: any): number | null => {
   if (!timestamp) return null;
 

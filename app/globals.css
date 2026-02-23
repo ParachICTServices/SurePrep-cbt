@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 @font-face {
   font-family: 'Cabinet Grotesk Variable';
   src: url('/CabinetGrotesk-Variable.ttf') format('truetype');

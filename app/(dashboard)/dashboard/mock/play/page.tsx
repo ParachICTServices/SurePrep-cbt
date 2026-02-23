@@ -34,6 +34,19 @@ function MockExamContent() {
   const [calcNewNumber, setCalcNewNumber] = useState(true);
 
 
+
+
+  
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+
   useEffect(() => {
     if (!subsParam) return;
     const subList = subsParam.split(",");
@@ -46,7 +59,7 @@ function MockExamContent() {
       await Promise.all(subList.map(async (sub) => {
         const q = query(collection(db, "questions"), where("subject", "==", sub), limit(40));
         const snap = await getDocs(q);
-        questionsMap[sub] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    questionsMap[sub] = shuffleArray(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         
         setAnswers(prev => ({ ...prev, [sub]: {} }));
       }));

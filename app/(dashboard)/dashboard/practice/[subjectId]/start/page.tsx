@@ -10,13 +10,14 @@ import Link from "next/link";
 export default function StartSubjectPracticePage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const topicFilter = searchParams.get("topic");
   const router = useRouter();
   const { user, userData } = useAuth();
-  
+
   // Extract values from URL
   const subjectId = params.subjectId as string;
   const cost = parseInt(searchParams.get("cost") || "5");
-  
+
   const [isDeducting, setIsDeducting] = useState(false);
   const [subjectName, setSubjectName] = useState("Subject Practice");
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ export default function StartSubjectPracticePage() {
       // 1. DEDUCT CREDITS IN FIREBASE
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, {
-        credits: increment(-cost)
+        credits: increment(-cost),
       });
 
       // 2. LOG THE USAGE
@@ -62,13 +63,17 @@ export default function StartSubjectPracticePage() {
         examType: "subject-practice",
         subjectId: subjectId,
         subjectName: subjectName,
+        topic: topicFilter || null, // ✅ Log which topic was practiced
         creditsSpent: cost,
         date: serverTimestamp(),
       });
 
-      // 3. REDIRECT TO THE ACTUAL PRACTICE SESSION
-      router.push(`/dashboard/practice/${subjectId}/exam`);
-
+      // 3. REDIRECT TO THE ACTUAL PRACTICE SESSION — pass topic if present
+     // ✅ Fixed
+const destination = topicFilter
+  ? `/dashboard/practice/${subjectId}/exam?topic=${encodeURIComponent(topicFilter)}`
+  : `/dashboard/practice/${subjectId}/exam`;
+      router.push(destination);
     } catch (error) {
       console.error("Failed to start practice:", error);
       alert("Error processing credits. Please try again.");
@@ -86,7 +91,15 @@ export default function StartSubjectPracticePage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
-      <Link href="/dashboard/practice" className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 mb-8 transition">
+      <p className="text-slate-500">
+        {topicFilter
+          ? `Practice ${topicFilter.replace(/-/g, " ")} questions`
+          : "Practice all topics in this subject"}
+      </p>
+      <Link
+        href="/dashboard/practice"
+        className="flex items-center gap-2 text-slate-500 hover:text-emerald-600 mb-8 transition"
+      >
         <ArrowLeft size={20} /> Back to Practice Centre
       </Link>
 
@@ -96,6 +109,12 @@ export default function StartSubjectPracticePage() {
             <BookOpen size={32} />
           </div>
           <h1 className="text-2xl font-bold capitalize">{subjectName}</h1>
+          {/* ✅ Show topic name in header if selected */}
+          {topicFilter && (
+            <p className="text-emerald-200 mt-1 text-sm font-medium capitalize">
+              Topic: {topicFilter.replace(/-/g, " ")}
+            </p>
+          )}
           <p className="text-emerald-100 mt-2">Ready to start your practice session?</p>
         </div>
 
@@ -127,8 +146,15 @@ export default function StartSubjectPracticePage() {
             <div className="flex gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100 text-blue-800 text-sm">
               <BookOpen className="flex-shrink-0" size={20} />
               <p>
-                This practice session will include questions from <strong className="capitalize">{subjectName}</strong>. 
-                You can practice at your own pace without time limits.
+                This practice session will include questions from{" "}
+                <strong className="capitalize">{subjectName}</strong>
+                {topicFilter && (
+                  <>
+                    {" "}— specifically the{" "}
+                    <strong className="capitalize">{topicFilter.replace(/-/g, " ")}</strong> topic
+                  </>
+                )}
+                . You can practice at your own pace without time limits.
               </p>
             </div>
 
@@ -136,8 +162,8 @@ export default function StartSubjectPracticePage() {
             <div className="flex gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-sm">
               <AlertCircle className="flex-shrink-0" size={20} />
               <p>
-                Credits are deducted once you click "Start". 
-                Ensure you have a stable internet connection before proceeding.
+                Credits are deducted once you click "Start". Ensure you have a stable internet
+                connection before proceeding.
               </p>
             </div>
 
@@ -158,7 +184,7 @@ export default function StartSubjectPracticePage() {
                 </>
               )}
             </button>
-            
+
             {(userData?.credits || 0) < cost && (
               <p className="text-center text-red-500 font-medium text-sm">
                 You do not have enough credits for this practice session.

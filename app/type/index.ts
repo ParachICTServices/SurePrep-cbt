@@ -19,6 +19,8 @@ export interface Question {
   correctOption: number; 
   explanation?: string; 
   subject: string;
+  imageURL?: string | null;
+  topics?: string[];  
 }
 
 // NEW: Credit pricing configuration

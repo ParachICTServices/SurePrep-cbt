@@ -12,6 +12,7 @@
     "@paystack/inline-js": "^2.22.7",
     "firebase": "^12.9.0",
     "framer-motion": "^12.33.2",
+    "katex": "^0.16.28",
     "lucide": "^0.563.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/katex": "^0.16.8",
     "@types/node": "^20",
     "@types/paystack__inline-js": "^1.0.2",
     "@types/react": "^19",

@@ -1,477 +1,825 @@
 "use client";
 import { useState } from "react";
-import { collection, doc, getDocs, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp, getDocs, query, where, collection, updateDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
-import { Loader2, CheckCircle, Database, Trash2, AlertCircle, Beaker, Palette, Calculator, Globe } from "lucide-react";
+import { Loader2, ListTree, Tag, CheckCircle, Search, Wand2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-// Categorized subjects
-const SUBJECTS_DATA = {
-  // SCIENCE SUBJECTS
-  sciences: [
-    { id: "physics", name: "Physics", color: "bg-blue-100 text-blue-600" },
-    { id: "chemistry", name: "Chemistry", color: "bg-green-100 text-green-600" },
-    { id: "biology", name: "Biology", color: "bg-emerald-100 text-emerald-600" },
-    { id: "mathematics", name: "Mathematics", color: "bg-indigo-100 text-indigo-600" },
-    { id: "further-mathematics", name: "Further Mathematics", color: "bg-purple-100 text-purple-600" },
-    { id: "agricultural-science", name: "Agricultural Science", color: "bg-lime-100 text-lime-600" },
+// ─── SUBJECT TOPICS ───────────────────────────────────────────────────────────
+const SUBJECT_TOPICS: Record<string, string[]> = {
+  mathematics: [
+    'Numbers & Arithmetic', 'Ratio & Proportion', 'Indices, Logs & Surds', 'Sets',
+    'Algebraic Expressions', 'Factorization', 'Quadratic Equations', 'Simultaneous Equations',
+    'Graphs', 'Rational Expressions', 'Inequalities', 'Geometry', 'Trigonometry',
+    'Calculus', 'Statistics', 'Probability', 'Vectors'
   ],
-  
-  // ARTS SUBJECTS
-  arts: [
-    { id: "literature", name: "Literature in English", color: "bg-purple-100 text-purple-600" },
-    { id: "government", name: "Government", color: "bg-red-100 text-red-600" },
-    { id: "crs", name: "Christian Religious Studies", color: "bg-amber-100 text-amber-600" },
-    { id: "irs", name: "Islamic Religious Studies", color: "bg-teal-100 text-teal-600" },
-    { id: "history", name: "History", color: "bg-orange-100 text-orange-600" },
-    { id: "geography", name: "Geography", color: "bg-cyan-100 text-cyan-600" },
-    { id: "civic-education", name: "Civic Education", color: "bg-rose-100 text-rose-600" },
-  ],
-  
-  // COMMERCIAL SUBJECTS
-  commercial: [
-    { id: "accounting", name: "Accounting", color: "bg-green-100 text-green-600" },
-    { id: "commerce", name: "Commerce", color: "bg-emerald-100 text-emerald-600" },
-    { id: "economics", name: "Economics", color: "bg-blue-100 text-blue-600" },
-    { id: "business-studies", name: "Business Studies", color: "bg-teal-100 text-teal-600" },
-  ],
-  
-  // GENERAL/CORE SUBJECTS (Available to all students)
-  general: [
-    { id: "english", name: "English Language", color: "bg-slate-100 text-slate-600" },
-    { id: "yoruba", name: "Yoruba", color: "bg-yellow-100 text-yellow-700" },
-    { id: "igbo", name: "Igbo", color: "bg-green-100 text-green-700" },
-    { id: "hausa", name: "Hausa", color: "bg-red-100 text-red-700" },
-    { id: "french", name: "French", color: "bg-blue-100 text-blue-700" },
-    { id: "computer-studies", name: "Computer Studies", color: "bg-indigo-100 text-indigo-600" },
-  ]
-};
-
-// Sample questions for each subject
-const SAMPLE_QUESTIONS: Record<string, any[]> = {
   physics: [
-    {
-      questionText: "What is the SI unit of force?",
-      options: ["Newton", "Joule", "Watt", "Pascal"],
-      correctOption: 0,
-      explanation: "The SI unit of force is the Newton (N), named after Sir Isaac Newton."
-    },
-    {
-      questionText: "Which of the following is a vector quantity?",
-      options: ["Speed", "Distance", "Velocity", "Time"],
-      correctOption: 2,
-      explanation: "Velocity is a vector quantity because it has both magnitude and direction."
-    },
-    {
-      questionText: "What is the acceleration due to gravity on Earth?",
-      options: ["8.9 m/s²", "9.8 m/s²", "10.8 m/s²", "11.8 m/s²"],
-      correctOption: 1,
-      explanation: "The standard acceleration due to gravity on Earth is approximately 9.8 m/s²."
-    }
+    'Measurement & Units', 'Motion', 'Equilibrium of Forces', 'Work, Energy & Power',
+    'Simple Machines', 'Elasticity', 'Hydrostatics', 'Temperature & Thermal Expansion',
+    'Heat & Vapours', 'Molecular Theory', 'Waves & Sound', 'Light (Reflection/Refraction)',
+    'Electrostatics', 'Current Electricity', 'Magnetism', 'Electromagnetism', 'Atomic Physics'
   ],
   chemistry: [
-    {
-      questionText: "What is the chemical symbol for Gold?",
-      options: ["Go", "Gd", "Au", "Ag"],
-      correctOption: 2,
-      explanation: "The chemical symbol for Gold is Au, from its Latin name 'Aurum'."
-    },
-    {
-      questionText: "What is the pH of pure water?",
-      options: ["5", "6", "7", "8"],
-      correctOption: 2,
-      explanation: "Pure water has a pH of 7, making it neutral."
-    },
-    {
-      questionText: "Which gas is most abundant in Earth's atmosphere?",
-      options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Argon"],
-      correctOption: 2,
-      explanation: "Nitrogen makes up about 78% of Earth's atmosphere."
-    }
+    'Particulate Nature of Matter', 'Stoichiometry', 'Gas Laws', 'Atomic Structure',
+    'Periodic Table', 'Chemical Bonding', 'Thermodynamics', 'Chemical Kinetics',
+    'Equilibrium', 'Acids, Bases & Salts', 'Electrochemistry', 'Organic Chemistry',
+    'Metals & Non-Metals', 'Nuclear Chemistry'
   ],
   biology: [
-    {
-      questionText: "What is the powerhouse of the cell?",
-      options: ["Nucleus", "Ribosome", "Mitochondria", "Chloroplast"],
-      correctOption: 2,
-      explanation: "Mitochondria are known as the powerhouse of the cell because they produce ATP."
-    },
-    {
-      questionText: "What is photosynthesis?",
-      options: [
-        "Breaking down food",
-        "Converting light energy to chemical energy",
-        "Cell division",
-        "Protein synthesis"
-      ],
-      correctOption: 1,
-      explanation: "Photosynthesis is the process by which plants convert light energy into chemical energy."
-    }
-  ],
-  mathematics: [
-    {
-      questionText: "What is 15% of 200?",
-      options: ["25", "30", "35", "40"],
-      correctOption: 1,
-      explanation: "15% of 200 = (15/100) × 200 = 30"
-    },
-    {
-      questionText: "Solve: 2x + 5 = 15",
-      options: ["x = 3", "x = 5", "x = 7", "x = 10"],
-      correctOption: 1,
-      explanation: "2x + 5 = 15 → 2x = 10 → x = 5"
-    }
+    'Living Organisms', 'Cell Biology', 'Nutrition', 'Transport System',
+    'Respiration', 'Excretion', 'Regulation & Homeostasis', 'Reproduction',
+    'Genetics', 'Ecology', 'Evolution'
   ],
   english: [
-    {
-      questionText: "What is the plural of 'Child'?",
-      options: ["Childs", "Children", "Childes", "Childer"],
-      correctOption: 1,
-      explanation: "The correct plural form of 'child' is 'children'."
-    },
-    {
-      questionText: "Identify the verb in this sentence: 'The cat runs quickly.'",
-      options: ["cat", "runs", "quickly", "the"],
-      correctOption: 1,
-      explanation: "'Runs' is the action word (verb) in this sentence."
-    }
+    'Oral English', 'Comprehension', 'Summary', 'Lexis & Structure', 'Essay Writing'
   ],
   literature: [
-    {
-      questionText: "Who wrote 'Things Fall Apart'?",
-      options: ["Wole Soyinka", "Chinua Achebe", "Chimamanda Adichie", "Ben Okri"],
-      correctOption: 1,
-      explanation: "'Things Fall Apart' was written by Chinua Achebe in 1958."
-    }
-  ],
-  government: [
-    {
-      questionText: "What does 'Democracy' mean?",
-      options: [
-        "Rule by the military",
-        "Rule by the people",
-        "Rule by the rich",
-        "Rule by one person"
-      ],
-      correctOption: 1,
-      explanation: "Democracy means 'rule by the people', from Greek 'demos' (people) and 'kratos' (rule)."
-    }
-  ],
-  accounting: [
-    {
-      questionText: "What is the accounting equation?",
-      options: [
-        "Assets = Liabilities + Equity",
-        "Assets = Revenue - Expenses",
-        "Profit = Revenue - Costs",
-        "Cash = Assets - Liabilities"
-      ],
-      correctOption: 0,
-      explanation: "The fundamental accounting equation is: Assets = Liabilities + Equity"
-    }
+    'Drama', 'Prose', 'Poetry', 'Shakespeare', 'Literary Appreciation',
+    'African Literature', 'Non-African Literature'
   ],
   economics: [
-    {
-      questionText: "What is the law of demand?",
-      options: [
-        "As price increases, demand increases",
-        "As price decreases, demand decreases",
-        "As price increases, demand decreases",
-        "Price does not affect demand"
-      ],
-      correctOption: 2,
-      explanation: "The law of demand states that as price increases, quantity demanded decreases (inverse relationship)."
-    }
+    'Basic Concepts', 'Economic Systems', 'Production', 'Market Structures',
+    'Money & Inflation', 'Financial Institutions', 'Public Finance',
+    'International Trade', 'Economic Development'
+  ],
+  government: [
+    'Concepts of Government', 'Political Parties', 'Electoral Process',
+    'Public Administration', 'Pre-Colonial Administration', 'Colonial Administration',
+    'Constitutional Development', 'International Organizations'
+  ],
+  accounting: [
+    'Book Keeping', 'Final Accounts', 'Partnership', 'Company Accounts',
+    'Public Sector Accounting', 'Manufacturing Accounts'
+  ],
+  commerce: [
+    'Occupation', 'Trade', 'Business Organization', 'Banking & Finance',
+    'Transportation', 'Communication', 'Insurance', 'Advertising', 'Marketing'
   ]
 };
 
-export default function AdminSeeder() {
+// ─── KEYWORD MAP ──────────────────────────────────────────────────────────────
+const TOPIC_KEYWORDS: Record<string, Record<string, string[]>> = {
+  mathematics: {
+    'quadratic-equations':      ['quadratic', 'x²', 'x^2', 'discriminant', 'completing the square'],
+    'simultaneous-equations':   ['simultaneous', 'solve the equations', 'find x and y'],
+    'indices,-logs-&-surds':    ['logarithm', 'log ', 'ln ', 'indices', 'surd', 'index', 'exponent', 'laws of indices'],
+    'ratio-&-proportion':       ['ratio', 'proportion', 'direct variation', 'inverse variation', 'shared in ratio'],
+    'numbers-&-arithmetic':     ['lcm', 'hcf', 'prime', 'integer', 'decimal', 'place value', 'divisib', 'number line', 'base ten'],
+    'sets':                     ['union', 'intersection', 'complement', 'subset', 'venn', 'universal set'],
+    'algebraic-expressions':    ['expand', 'simplify', 'expression', 'polynomial', 'binomial', 'algebraic'],
+    'factorization':            ['factoris', 'factori', 'common factor', 'difference of two squares'],
+    'graphs':                   ['graph', 'gradient', 'slope', 'intercept', 'plot', 'sketch', 'coordinate'],
+    'rational-expressions':     ['rational', 'partial fraction', 'numerator', 'denominator'],
+    'inequalities':             ['inequality', 'inequalities', 'greater than', 'less than', 'range of values'],
+    'geometry':                 ['angle', 'triangle', 'circle', 'polygon', 'perimeter', 'area', 'volume',
+                                  'rectangle', 'square', 'parallel', 'perpendicular', 'chord', 'tangent',
+                                  'arc', 'sector', 'diameter', 'radius', 'circumference', 'cube', 'cylinder',
+                                  'cone', 'sphere', 'prism', 'bearing', 'locus'],
+    'trigonometry':             ['sin', 'cos', 'tan', 'trigon', 'angle of elevation', 'angle of depression',
+                                  'cosine rule', 'sine rule', 'pythagoras'],
+    'calculus':                 ['differentiat', 'integrat', 'dy/dx', 'derivative', 'rate of change', 'd/dx', 'turning point'],
+    'statistics':               ['mean', 'median', 'mode', 'average', 'frequency', 'histogram', 'variance',
+                                  'standard deviation', 'ogive', 'class interval'],
+    'probability':              ['probability', 'likely', 'chance', 'random', 'sample space', 'dice', 'coin', 'draw a ball'],
+    'vectors':                  ['vector', 'magnitude', 'position vector', 'resultant'],
+  },
+  physics: {
+    // ✅ Legacy topic IDs — kept so old questions get retagged correctly
+    'mechanics': [
+      'velocity', 'acceleration', 'speed', 'momentum', 'force', 'newton',
+      'inertia', 'projectile', 'displacement', 'dynamics', 'kinetics',
+      'scalar quantity', 'vector quantity', 'friction', 'impulse'
+    ],
+    'electricity-and-magnetism': [
+      'electric current', 'potential difference', 'resistance', 'ohm',
+      'circuit diagram', 'magnetic flux', 'electromagnetic field',
+      'galvanometer', 'ammeter', 'voltmeter', 'series circuit', 'parallel circuit'
+    ],
+    'thermodynamics': [
+      'heat', 'temperature', 'thermal', 'specific heat capacity', 'latent heat',
+      'conduction', 'convection', 'radiation', 'thermal expansion',
+      'thermometer', 'calorimeter', 'heat transfer', 'boiling point', 'melting point'
+    ],
+    // ✅ Current correct topic IDs
+    'motion':                           ['velocity', 'acceleration', 'speed', 'displacement', 'projectile',
+                                         'momentum', 'inertia', 'uniform motion', 'equations of motion',
+                                         'distance-time', 'velocity-time', 'newton\'s law'],
+    'work,-energy-&-power':             ['work done', 'kinetic energy', 'potential energy', 'power', 'joule', 'watt',
+                                         'energy conversion', 'mechanical energy', 'conservation of energy'],
+    'waves-&-sound':                    ['wave', 'frequency', 'wavelength', 'amplitude', 'sound', 'echo',
+                                         'resonance', 'pitch', 'transverse', 'longitudinal', 'hertz'],
+    'current-electricity':              ['current', 'voltage', 'resistance', 'ohm', 'circuit', 'resistor',
+                                         'ammeter', 'voltmeter', 'kirchhoff', 'electromotive force', 'e.m.f',
+                                         'internal resistance', 'electrical power', 'watt'],
+    'electrostatics':                   ['charge', 'electric field', 'coulomb', 'static electricity',
+                                         'electrostatic', 'capacitor', 'capacitance', 'electric potential'],
+    'magnetism':                        ['magnet', 'magnetic field', 'compass', 'flux', 'pole',
+                                         'magnetic force', 'permanent magnet', 'ferromagnetic'],
+    'electromagnetism':                 ['electromagnetic', 'induction', 'motor', 'generator', 'transformer',
+                                         'faraday', 'lenz', 'solenoid', 'coil', 'induced emf'],
+    'light-(reflection/refraction)':    ['light', 'reflection', 'refraction', 'mirror', 'lens', 'focal',
+                                         'ray', 'prism', 'total internal reflection', 'critical angle',
+                                         'concave', 'convex', 'image', 'snell'],
+    'measurement-&-units':              ['si unit', 'dimension', 'scalar', 'significant figure',
+                                         'unit of measurement', 'base unit', 'derived unit', 'vernier',
+                                         'micrometer', 'precision', 'accuracy'],
+    'atomic-physics':                   ['nucleus', 'electron', 'proton', 'neutron', 'radioactive',
+                                         'decay', 'half-life', 'nuclear', 'alpha', 'beta', 'gamma',
+                                         'fission', 'fusion', 'isotope', 'atomic number', 'mass number'],
+    'hydrostatics':                     ['pressure', 'fluid', 'density', 'upthrust', 'archimedes',
+                                         'buoyancy', 'pascal', 'hydraulic', 'liquid pressure',
+                                         'relative density', 'specific gravity'],
+    'elasticity':                       ['elastic', 'stress', 'strain', 'hooke', 'spring', 'extension',
+                                         'young modulus', 'elastic limit', 'deformation', 'compression'],
+    'simple-machines':                  ['lever', 'pulley', 'gear', 'mechanical advantage', 'velocity ratio',
+                                         'inclined plane', 'wedge', 'screw', 'efficiency of machine',
+                                         'effort', 'load'],
+    'equilibrium-of-forces':            ['equilibrium', 'moment', 'torque', 'tension', 'resultant force',
+                                         'turning effect', 'center of gravity', 'couple', 'beam',
+                                         'principle of moments'],
+    'temperature-&-thermal-expansion':  ['thermal expansion', 'temperature', 'thermometer', 'celsius',
+                                         'kelvin', 'fahrenheit', 'linear expansion', 'volume expansion',
+                                         'coefficient of expansion', 'bimetallic'],
+    'heat-&-vapours':                   ['latent heat', 'specific heat', 'vapour', 'evaporation',
+                                         'saturated vapour', 'humidity', 'dew point', 'boiling',
+                                         'condensation', 'calorimetry'],
+    'molecular-theory':                 ['brownian motion', 'kinetic theory', 'molecule', 'diffusion',
+                                         'surface tension', 'viscosity', 'cohesion', 'adhesion',
+                                         'intermolecular'],
+  },
+  chemistry: {
+    'organic-chemistry':                ['organic', 'hydrocarbon', 'alkane', 'alkene', 'alkyne', 'alcohol',
+                                         'ester', 'carboxylic', 'functional group', 'isomer', 'polymer'],
+    'acids,-bases-&-salts':             ['acid', 'base', 'salt', 'neutrali', 'ph', 'indicator', 'alkali', 'titration'],
+    'electrochemistry':                 ['electrolysis', 'electrode', 'cathode', 'anode', 'electrolyte'],
+    'atomic-structure':                 ['atomic number', 'mass number', 'orbital', 'electron shell', 'atomic structure'],
+    'periodic-table':                   ['periodic table', 'group', 'period', 'transition metal'],
+    'chemical-bonding':                 ['ionic bond', 'covalent bond', 'metallic bond', 'van der waals', 'hydrogen bond'],
+    'stoichiometry':                    ['mole', 'molar mass', 'stoichiometr', 'yield', 'limiting reagent'],
+    'gas-laws':                         ['gas law', 'boyle', 'charles', 'ideal gas', 'avogadro'],
+    'thermodynamics':                   ['enthalpy', 'exothermic', 'endothermic', 'heat of reaction', 'bond energy', 'hess'],
+    'chemical-kinetics':                ['rate of reaction', 'catalyst', 'activation energy', 'collision theory'],
+    'equilibrium':                      ['equilibrium', 'reversible reaction', 'le chatelier'],
+    'metals-&-non-metals':              ['alloy', 'corrosion', 'rusting', 'extraction of metal'],
+    'nuclear-chemistry':                ['nuclear', 'radioactive', 'fission', 'fusion', 'half-life'],
+    'particulate-nature-of-matter':     ['diffusion', 'brownian motion', 'kinetic theory', 'particulate'],
+  },
+  biology: {
+    'cell-biology':                     ['cell wall', 'cell membrane', 'nucleus', 'organelle', 'mitochondria',
+                                         'chloroplast', 'osmosis', 'diffusion'],
+    'genetics':                         ['gene', 'chromosome', 'dna', 'rna', 'allele', 'dominant', 'recessive',
+                                         'genotype', 'phenotype', 'mutation'],
+    'ecology':                          ['ecosystem', 'food chain', 'food web', 'habitat', 'population', 'biotic', 'abiotic'],
+    'reproduction':                     ['fertilisation', 'gamete', 'sperm', 'ovum', 'embryo', 'pollination', 'seed dispersal'],
+    'nutrition':                        ['carbohydrate', 'protein', 'vitamin', 'mineral', 'diet', 'digestion', 'enzyme', 'nutrient'],
+    'transport-system':                 ['blood', 'heart', 'artery', 'vein', 'capillary', 'circulation',
+                                         'xylem', 'phloem', 'transpiration'],
+    'respiration':                      ['respiration', 'oxygen', 'carbon dioxide', 'atp', 'glycolysis',
+                                         'aerobic', 'anaerobic', 'breathing'],
+    'excretion':                        ['excretion', 'kidney', 'urine', 'urea', 'nephron', 'filtration'],
+    'regulation-&-homeostasis':         ['homeostasis', 'hormone', 'nervous system', 'neuron', 'reflex', 'insulin', 'glucagon'],
+    'evolution':                        ['natural selection', 'adaptation', 'darwin', 'variation', 'fossil'],
+    'living-organisms':                 ['kingdom', 'classification', 'taxonomy', 'bacteria', 'fungi', 'virus', 'protist'],
+  },
+  english: {
+    'oral-english': [
+      'stress', 'intonation', 'phoneme', 'vowel', 'consonant', 'syllable',
+      'rhyme', 'pronunciation', 'spoken', 'sound', 'tone', 'accent',
+      'voiced', 'voiceless', 'nasal', 'plosive', 'fricative', 'diphthong',
+      'word stress', 'sentence stress', 'rhythm', 'pitch'
+    ],
+    'comprehension': [
+      'passage', 'according to the passage', 'from the passage', 'the author',
+      'the writer', 'the text', 'what does the writer', 'what is the main idea',
+      'best title', 'the passage suggests', 'in the passage', 'read the',
+      'the tone of', 'the mood of', 'infer', 'implied', 'the theme'
+    ],
+    'summary': [
+      'summarize', 'summary', 'in your own words', 'note form',
+      'list the points', 'points made', 'from the passage above'
+    ],
+    'lexis-&-structure': [
+      'synonym', 'antonym', 'closest in meaning', 'opposite in meaning',
+      'word that best', 'fill in the blank', 'choose the word',
+      'complete the sentence', 'correct form', 'tense', 'plural',
+      'singular', 'verb', 'noun', 'adjective', 'adverb', 'preposition',
+      'conjunction', 'pronoun', 'article', 'modal', 'passive', 'active voice',
+      'relative clause', 'conditional', 'gerund', 'infinitive', 'participle',
+      'subject', 'predicate', 'clause', 'phrase', 'sentence structure',
+      'grammatically', 'correct option', 'which of the following',
+      'error', 'most appropriate', 'best completes'
+    ],
+    'essay-writing': [
+      'essay', 'write a letter', 'write an article', 'write a speech',
+      'formal letter', 'informal letter', 'narrative', 'descriptive',
+      'expository', 'argumentative', 'introduction', 'conclusion',
+      'paragraph', 'composition', 'write about'
+    ],
+  },
+  accounting: {
+    'book-keeping': [
+      'ledger', 'journal', 'double entry', 'debit', 'credit', 'posting',
+      'trial balance', 'folio', 'source document', 'invoice', 'receipt',
+      'cash book', 'petty cash', 'day book', 'book of original entry',
+      'subsidiary book', 'opening entry', 'closing entry'
+    ],
+    'final-accounts': [
+      'trading account', 'profit and loss', 'balance sheet', 'income statement',
+      'gross profit', 'net profit', 'capital', 'liability', 'asset',
+      'current asset', 'fixed asset', 'accrual', 'prepayment', 'depreciation',
+      'provision', 'bad debt', 'stock', 'closing stock', 'opening stock',
+      'cost of sales', 'revenue', 'expense', 'appropriation'
+    ],
+    'partnership': [
+      'partnership', 'partner', 'profit sharing', 'goodwill', 'admission',
+      'dissolution', 'revaluation', 'capital account', 'current account',
+      'drawings', 'interest on capital', 'salary to partner', 'joint venture'
+    ],
+    'company-accounts': [
+      'company', 'shareholder', 'share capital', 'ordinary share', 'preference share',
+      'debenture', 'dividend', 'retained earnings', 'reserve', 'bonus issue',
+      'rights issue', 'public limited', 'private limited', 'prospectus',
+      'annual report', 'directors'
+    ],
+    'public-sector-accounting': [
+      'government account', 'public sector', 'consolidated fund', 'budget',
+      'appropriation', 'warrant', 'vote', 'auditor general', 'public fund',
+      'statutory expenditure', 'recurrent expenditure', 'capital expenditure'
+    ],
+    'manufacturing-accounts': [
+      'manufacturing', 'factory', 'cost of production', 'prime cost',
+      'factory overhead', 'work in progress', 'raw material', 'direct labour',
+      'indirect cost', 'production cost', 'cost account', 'manufacturing profit'
+    ],
+  },
+  commerce: {
+    'occupation': [
+      'occupation', 'profession', 'trade', 'industry', 'commerce',
+      'direct service', 'indirect service', 'extractive', 'constructive',
+      'manufacturing', 'type of production'
+    ],
+    'trade': [
+      'home trade', 'foreign trade', 'import', 'export', 'entrepot',
+      'retail', 'wholesale', 'retailer', 'wholesaler', 'middleman',
+      'chain of distribution', 'barter', 'counter trade'
+    ],
+    'business-organization': [
+      'sole trader', 'partnership', 'cooperative', 'public corporation',
+      'limited liability', 'memorandum', 'articles of association',
+      'incorporation', 'franchise', 'merger', 'acquisition', 'conglomerate'
+    ],
+    'banking-&-finance': [
+      'bank', 'central bank', 'commercial bank', 'savings', 'loan',
+      'interest', 'overdraft', 'mortgage', 'cheque', 'credit card',
+      'debit card', 'letter of credit', 'bill of exchange', 'promissory note'
+    ],
+    'transportation': [
+      'transport', 'road', 'rail', 'air', 'water', 'pipeline',
+      'freight', 'cargo', 'shipping', 'haulage', 'warehousing',
+      'container', 'bill of lading', 'consignment'
+    ],
+    'communication': [
+      'communication', 'telephone', 'internet', 'postal', 'telegraph',
+      'email', 'fax', 'media', 'broadcast', 'satellite', 'network'
+    ],
+    'insurance': [
+      'insurance', 'premium', 'policy', 'insurer', 'insured', 'claim',
+      'indemnity', 'subrogation', 'contribution', 'proximate cause',
+      'life assurance', 'fire insurance', 'marine insurance', 'cover note'
+    ],
+    'advertising': [
+      'advertising', 'advertisement', 'media', 'promotion', 'publicity',
+      'brand', 'slogan', 'target audience', 'sales promotion', 'public relations'
+    ],
+    'marketing': [
+      'marketing', 'market research', 'consumer', 'demand', 'supply',
+      'pricing', 'distribution channel', 'product', 'place', 'price',
+      'promotion', 'market segmentation', 'branding', 'packaging'
+    ],
+  },
+  economics: {
+    'basic-concepts': [
+      'scarcity', 'opportunity cost', 'scale of preference', 'wants',
+      'needs', 'economics', 'factors of production', 'land', 'labour',
+      'capital', 'entrepreneur', 'utility', 'wealth', 'income'
+    ],
+    'economic-systems': [
+      'capitalism', 'socialism', 'mixed economy', 'free market',
+      'command economy', 'planned economy', 'price mechanism',
+      'private sector', 'public sector', 'nationalization', 'privatization'
+    ],
+    'production': [
+      'production', 'productivity', 'division of labour', 'specialization',
+      'scale of production', 'returns to scale', 'cost of production',
+      'fixed cost', 'variable cost', 'average cost', 'marginal cost',
+      'total cost', 'revenue', 'profit', 'loss', 'break even'
+    ],
+    'market-structures': [
+      'monopoly', 'oligopoly', 'perfect competition', 'monopolistic',
+      'price discrimination', 'cartel', 'market power', 'firm',
+      'industry', 'demand curve', 'supply curve', 'equilibrium price',
+      'elasticity', 'price ceiling', 'price floor'
+    ],
+    'money-&-inflation': [
+      'money', 'inflation', 'deflation', 'currency', 'barter',
+      'purchasing power', 'consumer price', 'hyperinflation', 'stagflation',
+      'money supply', 'velocity of money', 'quantity theory'
+    ],
+    'financial-institutions': [
+      'central bank', 'commercial bank', 'development bank', 'stock exchange',
+      'insurance company', 'pension fund', 'microfinance', 'monetary policy',
+      'interest rate', 'reserve requirement', 'open market operation'
+    ],
+    'public-finance': [
+      'government expenditure', 'taxation', 'tax', 'fiscal policy',
+      'budget deficit', 'budget surplus', 'national debt', 'subsidy',
+      'transfer payment', 'public goods', 'externality', 'merit goods'
+    ],
+    'international-trade': [
+      'international trade', 'balance of payment', 'balance of trade',
+      'exchange rate', 'tariff', 'quota', 'embargo', 'dumping',
+      'comparative advantage', 'absolute advantage', 'terms of trade',
+      'foreign exchange', 'devaluation', 'revaluation', 'current account'
+    ],
+    'economic-development': [
+      'economic development', 'gdp', 'gnp', 'per capita income',
+      'standard of living', 'poverty', 'unemployment', 'industrialization',
+      'foreign aid', 'foreign investment', 'developing country', 'infrastructure'
+    ],
+  },
+  government: {
+    'concepts-of-government': [
+      'government', 'state', 'sovereignty', 'constitution', 'democracy',
+      'autocracy', 'oligarchy', 'federal', 'unitary', 'confederal',
+      'separation of powers', 'rule of law', 'legitimacy', 'authority', 'power'
+    ],
+    'political-parties': [
+      'political party', 'party system', 'one party', 'two party', 'multi party',
+      'manifesto', 'ideology', 'pressure group', 'interest group', 'lobby',
+      'opposition', 'ruling party', 'primary election', 'candidate'
+    ],
+    'electoral-process': [
+      'election', 'voting', 'ballot', 'suffrage', 'franchise', 'electorate',
+      'constituency', 'proportional representation', 'first past the post',
+      'referendum', 'plebiscite', 'electoral commission', 'rigging', 'independent'
+    ],
+    'public-administration': [
+      'civil service', 'bureaucracy', 'minister', 'ministry', 'department',
+      'public servant', 'cabinet', 'executive', 'legislature', 'judiciary',
+      'local government', 'council', 'public policy', 'administration'
+    ],
+    'pre-colonial-administration': [
+      'pre-colonial', 'traditional', 'emirate', 'obship', 'chieftaincy',
+      'council of elders', 'age grade', 'obi', 'oba', 'emir', 'igbo',
+      'yoruba', 'hausa', 'fulani', 'kingship', 'traditional ruler'
+    ],
+    'colonial-administration': [
+      'colonial', 'british', 'indirect rule', 'direct rule', 'lugard',
+      'protectorate', 'amalgamation', 'governor general', 'native authority',
+      'warrant chief', 'crown colony', 'mandate territory'
+    ],
+    'constitutional-development': [
+      'constitution', 'clifford', 'richards', 'macpherson', 'lyttleton',
+      'independence', 'republic', 'federal', 'amendment', 'bill of rights',
+      'fundamental rights', 'entrenchment', 'constituent assembly'
+    ],
+    'international-organizations': [
+      'united nations', 'african union', 'ecowas', 'commonwealth',
+      'nato', 'opec', 'world bank', 'imf', 'wto', 'security council',
+      'general assembly', 'peacekeeping', 'sanctions', 'diplomatic'
+    ],
+  },
+  literature: {
+    'drama': [
+      'play', 'playwright', 'dialogue', 'scene', 'act', 'stage direction',
+      'tragedy', 'comedy', 'protagonist', 'antagonist', 'conflict',
+      'dramatic irony', 'soliloquy', 'aside', 'monologue', 'climax'
+    ],
+    'prose': [
+      'novel', 'short story', 'narrator', 'plot', 'character', 'setting',
+      'theme', 'point of view', 'first person', 'third person', 'flashback',
+      'foreshadowing', 'figurative language', 'diction', 'prose fiction'
+    ],
+    'poetry': [
+      'poem', 'poet', 'verse', 'stanza', 'rhyme scheme', 'metre', 'rhythm',
+      'imagery', 'metaphor', 'simile', 'personification', 'alliteration',
+      'onomatopoeia', 'ode', 'sonnet', 'lyric', 'epic', 'ballad'
+    ],
+    'shakespeare': [
+      'shakespeare', 'hamlet', 'othello', 'macbeth', 'romeo', 'juliet',
+      'merchant of venice', 'midsummer', 'king lear', 'elizabethan'
+    ],
+    'literary-appreciation': [
+      'literary device', 'tone', 'mood', 'style', 'structure', 'form',
+      'genre', 'satire', 'allegory', 'symbolism', 'irony', 'paradox',
+      'hyperbole', 'euphemism', 'oxymoron', 'literary criticism'
+    ],
+    'african-literature': [
+      'chinua achebe', 'wole soyinka', 'ngugi', 'buchi emecheta', 'chimamanda',
+      'things fall apart', 'african writer', 'postcolonial', 'oral tradition',
+      'african novel', 'negritude', 'africa'
+    ],
+    'non-african-literature': [
+      'charles dickens', 'jane austen', 'george orwell', 'hemingway',
+      'american literature', 'british literature', 'european literature',
+      'victorian', 'modernism', 'postmodernism', 'western literature'
+    ],
+  },
+};
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+function assignTopics(subject: string, questionText: string, explanation: string = ""): string[] {
+  const keywordMap = TOPIC_KEYWORDS[subject];
+  if (!keywordMap) return [];
+  const text = (questionText + " " + explanation).toLowerCase();
+  const matched: string[] = [];
+  for (const [topicId, keywords] of Object.entries(keywordMap)) {
+    if (keywords.some(kw => text.includes(kw.toLowerCase()))) {
+      matched.push(topicId);
+    }
+  }
+  return matched;
+}
+
+// ─── COMPONENT ────────────────────────────────────────────────────────────────
+export default function TopicSeeder() {
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState("");
+  const [auditing, setAuditing] = useState(false);
+  const [tagging, setTagging] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [clearingAll, setClearingAll] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState("mathematics");
 
-  const seedSubjects = async () => {
-    setLoading(true);
-    setProgress("Starting to seed subjects...");
-    
+  const addLog = (msg: string) => setLogs(prev => [msg, ...prev]);
+  const isBusy = loading || auditing || tagging || clearing || clearingAll;
+
+  // ─── AUDIT ─────────────────────────────────────────────────────────────────
+  const auditTopics = async () => {
+    setAuditing(true);
+    setLogs([]);
+    addLog(`🔍 Auditing: ${selectedSubject}...`);
     try {
-      let totalSubjects = 0;
-      
-      // Seed subjects by category
-      for (const [category, subjects] of Object.entries(SUBJECTS_DATA)) {
-        setProgress(`Seeding ${category} subjects...`);
-        
-        for (const subject of subjects) {
-          await setDoc(doc(db, "subjects", subject.id), {
-            id: subject.id,
-            name: subject.name,
-            color: subject.color,
-            category: category, // sciences, arts, commercial, or general
-            createdAt: new Date().toISOString(),
+      const snap = await getDocs(
+        query(collection(db, "questions"), where("subject", "==", selectedSubject))
+      );
+      addLog(`📦 ${snap.size} total questions found`);
+
+      let noTopics = 0;
+      const topicCounts: Record<string, number> = {};
+
+      snap.docs.forEach(d => {
+        const topics = d.data().topics;
+        if (!topics || !Array.isArray(topics) || topics.length === 0) {
+          noTopics++;
+        } else {
+          topics.forEach((t: string) => {
+            topicCounts[t] = (topicCounts[t] || 0) + 1;
           });
-          totalSubjects++;
         }
+      });
+
+      if (noTopics > 0) addLog(`⚠️  ${noTopics} questions have NO topics — run Auto-Tag to fix`);
+
+      const sorted = Object.entries(topicCounts).sort((a, b) => b[1] - a[1]);
+      if (sorted.length === 0) {
+        addLog("❌ No topics found on any questions.");
+      } else {
+        addLog(`✅ ${sorted.length} unique topic(s) in DB:`);
+        addLog("─────────────────────────────────");
+        sorted.forEach(([t, c]) => addLog(`  "${t}"  →  ${c} question${c > 1 ? 's' : ''}`));
+        addLog("─────────────────────────────────");
       }
-      
-      setProgress(`✅ Successfully seeded ${totalSubjects} subjects!`);
-      toast.success(`${totalSubjects} subjects added successfully!`);
-      
-    } catch (error) {
-      console.error("Error seeding subjects:", error);
-      toast.error("Failed to seed subjects");
-      setProgress("❌ Error seeding subjects");
+    } catch (e: any) {
+      addLog(`❌ ${e.message}`);
     } finally {
-      setLoading(false);
+      setAuditing(false);
     }
   };
 
-  const seedQuestions = async () => {
-    setLoading(true);
-    setProgress("Starting to seed questions...");
-    
+  // ─── CLEAR GENERAL TAGS ────────────────────────────────────────────────────
+  const clearGeneralTags = async () => {
+    setClearing(true);
+    setLogs([]);
+    addLog(`🧹 Clearing "general" tags for: ${selectedSubject}...`);
     try {
-      let totalQuestions = 0;
-      
-      for (const [subjectId, questions] of Object.entries(SAMPLE_QUESTIONS)) {
-        setProgress(`Seeding questions for ${subjectId}...`);
-        
-        for (let i = 0; i < questions.length; i++) {
-          const question = questions[i];
-          await setDoc(doc(db, "questions", `${subjectId}_q${i + 1}`), {
-            subject: subjectId,
-            questionText: question.questionText,
-            options: question.options,
-            correctOption: question.correctOption,
-            explanation: question.explanation,
-            createdAt: new Date().toISOString(),
-          });
-          totalQuestions++;
-        }
+      const snap = await getDocs(
+        query(collection(db, "questions"), where("subject", "==", selectedSubject))
+      );
+
+      const generalDocs = snap.docs.filter(d => {
+        const t = d.data().topics;
+        return Array.isArray(t) && t.length === 1 && t[0] === "general";
+      });
+
+      addLog(`📦 Found ${generalDocs.length} questions tagged only "general"`);
+
+      if (generalDocs.length === 0) {
+        addLog("✅ Nothing to clear.");
+        return;
       }
-      
-      setProgress(`✅ Successfully seeded ${totalQuestions} questions!`);
-      toast.success(`${totalQuestions} questions added successfully!`);
-      
-    } catch (error) {
-      console.error("Error seeding questions:", error);
-      toast.error("Failed to seed questions");
-      setProgress("❌ Error seeding questions");
+
+      const batches = chunkArray(generalDocs, 20);
+      for (let i = 0; i < batches.length; i++) {
+        await Promise.all(
+          batches[i].map(d =>
+            updateDoc(doc(db, "questions", d.id), { topics: [] })
+          )
+        );
+        addLog(`⏳ Cleared batch ${i + 1}/${batches.length}`);
+        if (i < batches.length - 1) await sleep(500);
+      }
+
+      addLog("─────────────────────────────────");
+      addLog(`✅ Cleared ${generalDocs.length} "general" tags.`);
+      addLog("🎉 Now run Auto-Tag to re-process these questions.");
+      toast.success(`Cleared ${generalDocs.length} general tags!`);
+    } catch (e: any) {
+      addLog(`❌ ${e.message}`);
+      toast.error("Clear failed");
     } finally {
-      setLoading(false);
+      setClearing(false);
     }
   };
 
-  const seedAll = async () => {
-    await seedSubjects();
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Small delay
-    await seedQuestions();
+  // ─── CLEAR ALL TAGS ────────────────────────────────────────────────────────
+  // ✅ NEW: Wipes ALL tags so you can retag from scratch with corrected keywords
+  const clearAllTags = async () => {
+    setClearingAll(true);
+    setLogs([]);
+    addLog(`🧹 Clearing ALL tags for: ${selectedSubject}...`);
+    addLog(`⚠️  This will reset every question — use before a full retag`);
+    try {
+      const snap = await getDocs(
+        query(collection(db, "questions"), where("subject", "==", selectedSubject))
+      );
+
+      const taggedDocs = snap.docs.filter(d => {
+        const t = d.data().topics;
+        return Array.isArray(t) && t.length > 0;
+      });
+
+      addLog(`📦 Found ${taggedDocs.length} tagged questions — clearing all...`);
+
+      if (taggedDocs.length === 0) {
+        addLog("✅ Nothing to clear — all questions already untagged.");
+        return;
+      }
+
+      const batches = chunkArray(taggedDocs, 20);
+      for (let i = 0; i < batches.length; i++) {
+        await Promise.all(
+          batches[i].map(d =>
+            updateDoc(doc(db, "questions", d.id), { topics: [] })
+          )
+        );
+        addLog(`⏳ Cleared batch ${i + 1}/${batches.length}`);
+        if (i < batches.length - 1) await sleep(500);
+      }
+
+      addLog("─────────────────────────────────");
+      addLog(`✅ Cleared ALL tags from ${taggedDocs.length} questions.`);
+      addLog("🎉 Now run Auto-Tag to re-process with updated keywords.");
+      toast.success(`Cleared all tags for ${selectedSubject}!`);
+    } catch (e: any) {
+      addLog(`❌ ${e.message}`);
+      toast.error("Clear All failed");
+    } finally {
+      setClearingAll(false);
+    }
   };
 
-
-    const updateExistingSubjects = async () => {
-    setLoading(true);
-    setProgress("Fetching existing subjects...");
-    
+  // ─── AUTO-TAG (BATCHED) ────────────────────────────────────────────────────
+  const autoTagQuestions = async () => {
+    setTagging(true);
+    setLogs([]);
+    addLog(`🤖 Auto-tagging untagged questions for: ${selectedSubject}...`);
     try {
-      const subjectsSnapshot = await getDocs(collection(db, "subjects"));
-      
-      let updated = 0;
+      const snap = await getDocs(
+        query(collection(db, "questions"), where("subject", "==", selectedSubject))
+      );
+      addLog(`📦 ${snap.size} total questions fetched`);
+
       let skipped = 0;
-      
-      for (const docSnap of subjectsSnapshot.docs) {
-        const subjectId = docSnap.id;
-        const subjectData = docSnap.data();
-        
-        // Skip if already has category
-        if (subjectData.category) {
+      let tagged = 0;
+      let unmatched = 0;
+      const topicTally: Record<string, number> = {};
+
+      const toTag: { id: string; assigned: string[] }[] = [];
+
+      for (const docSnap of snap.docs) {
+        const data = docSnap.data();
+        const existing = data.topics;
+        if (existing && Array.isArray(existing) && existing.length > 0) {
           skipped++;
           continue;
         }
-        
-        // Auto-assign category based on subject name
-        let category: 'sciences' | 'arts' | 'commercial' | 'general' = 'general';
-        
-        const subjectName = subjectId.toLowerCase();
-        
-        // Science subjects
-        if (['physics', 'chemistry', 'biology', 'mathematics', 'further-mathematics', 'agricultural-science'].includes(subjectName)) {
-          category = 'sciences';
-        }
-        // Arts subjects
-        else if (['literature', 'government', 'crs', 'irs', 'history', 'geography', 'civic-education'].includes(subjectName)) {
-          category = 'arts';
-        }
-        // Commercial subjects
-        else if (['accounting', 'commerce', 'economics', 'business-studies'].includes(subjectName)) {
-          category = 'commercial';
-        }
-        // General/Core subjects
-        else if (['english', 'yoruba', 'igbo', 'hausa', 'french', 'computer-studies'].includes(subjectName)) {
-          category = 'general';
-        }
-        
-        // Update the document
-        await updateDoc(doc(db, "subjects", subjectId), {
-          category: category
-        });
-        
-        updated++;
-        setProgress(`Updated ${updated} subjects (${category})...`);
+        const assigned = assignTopics(selectedSubject, data.questionText || "", data.explanation || "");
+        toTag.push({ id: docSnap.id, assigned });
       }
-      
-      setProgress(`✅ Updated ${updated} subjects! Skipped ${skipped} (already had categories).`);
-      toast.success(`${updated} subjects updated with categories!`);
-      
-    } catch (error) {
-      console.error("Error updating subjects:", error);
-      toast.error("Failed to update subjects");
-      setProgress("❌ Error updating subjects");
+
+      addLog(`⏭️  Already tagged (skipping): ${skipped}`);
+      addLog(`📝 ${toTag.length} questions need tagging — processing in batches of 20...`);
+      addLog("─────────────────────────────────");
+
+      const batches = chunkArray(toTag, 20);
+
+      for (let i = 0; i < batches.length; i++) {
+        await Promise.all(
+          batches[i].map(async ({ id, assigned }) => {
+            if (assigned.length === 0) {
+              unmatched++;
+              await updateDoc(doc(db, "questions", id), { topics: ["general"] });
+            } else {
+              await updateDoc(doc(db, "questions", id), { topics: assigned });
+              assigned.forEach(t => { topicTally[t] = (topicTally[t] || 0) + 1; });
+              tagged++;
+            }
+          })
+        );
+        addLog(`⏳ Batch ${i + 1}/${batches.length} done — ${Math.min((i + 1) * 20, toTag.length)}/${toTag.length} processed`);
+        if (i < batches.length - 1) await sleep(500);
+      }
+
+      addLog("─────────────────────────────────");
+      addLog(`✅ Successfully tagged: ${tagged}`);
+      addLog(`⚠️  No keyword match (tagged "general"): ${unmatched}`);
+      addLog("─────────────────────────────────");
+      addLog("Topics assigned breakdown:");
+      Object.entries(topicTally)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([t, c]) => addLog(`  ${t}  →  ${c}`));
+      addLog("─────────────────────────────────");
+      addLog("🎉 Done! Run Audit to verify results.");
+      toast.success(`Tagged ${tagged} questions for ${selectedSubject}!`);
+    } catch (e: any) {
+      addLog(`❌ Error: ${e.message}`);
+      toast.error("Auto-tag failed");
+    } finally {
+      setTagging(false);
+    }
+  };
+
+  // ─── SYNC SUBJECTS ─────────────────────────────────────────────────────────
+  const updateTopicsOnly = async () => {
+    setLoading(true);
+    setLogs([]);
+    addLog("🚀 Syncing topic lists to subjects collection...");
+    try {
+      let count = 0;
+      for (const [subjectId, topicsList] of Object.entries(SUBJECT_TOPICS)) {
+        await setDoc(doc(db, "subjects", subjectId), {
+          topics: topicsList,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        count++;
+        addLog(`✅ ${subjectId}: ${topicsList.length} topics synced`);
+      }
+      addLog(`🎉 Done! Updated ${count} subjects.`);
+      toast.success("Topics synced!");
+    } catch (e: any) {
+      addLog(`❌ Error: ${e.message}`);
+      toast.error("Sync failed");
     } finally {
       setLoading(false);
     }
   };
 
+  // ─── RENDER ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+
           {/* Header */}
           <div className="text-center mb-8">
             <div className="bg-emerald-100 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Database size={32} className="text-emerald-600" />
+              <ListTree size={32} className="text-emerald-600" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Database Seeder</h1>
-            <p className="text-slate-500">Populate your Firebase with subjects and sample questions</p>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Topic Manager</h1>
+            <p className="text-slate-500 text-sm">
+              Audit, auto-tag, and sync topics across your question bank.
+            </p>
           </div>
 
-          {/* Subject Categories Overview */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-              <Beaker className="mx-auto text-blue-600 mb-2" size={24} />
-              <p className="font-bold text-slate-900">{SUBJECTS_DATA.sciences.length}</p>
-              <p className="text-xs text-slate-600">Science Subjects</p>
-            </div>
-            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 text-center">
-              <Palette className="mx-auto text-purple-600 mb-2" size={24} />
-              <p className="font-bold text-slate-900">{SUBJECTS_DATA.arts.length}</p>
-              <p className="text-xs text-slate-600">Arts Subjects</p>
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-              <Calculator className="mx-auto text-green-600 mb-2" size={24} />
-              <p className="font-bold text-slate-900">{SUBJECTS_DATA.commercial.length}</p>
-              <p className="text-xs text-slate-600">Commercial</p>
-            </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
-              <Globe className="mx-auto text-slate-600 mb-2" size={24} />
-              <p className="font-bold text-slate-900">{SUBJECTS_DATA.general.length}</p>
-              <p className="text-xs text-slate-600">General/Core</p>
-            </div>
+          {/* Subject Selector */}
+          <div className="mb-6">
+            <label className="text-sm font-bold text-slate-700 block mb-2">Select Subject</label>
+            <select
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              disabled={isBusy}
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            >
+              {Object.keys(SUBJECT_TOPICS).map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-4">
-            <button
-              onClick={seedSubjects}
-              disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Database size={20} />
-                  Seed Subjects Only ({Object.values(SUBJECTS_DATA).flat().length} subjects)
-                </>
-              )}
-            </button>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
 
-            <button
-              onClick={seedQuestions}
-              disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CheckCircle size={20} />
-                  Seed Sample Questions ({Object.values(SAMPLE_QUESTIONS).flat().length} questions)
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={seedAll}
-              disabled={loading}
-              className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-3 shadow-lg"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Database size={20} />
-                  Seed Everything (Subjects + Questions)
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Progress Display */}
-          {progress && (
-            <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
-              <p className="text-sm text-slate-700 text-center">{progress}</p>
+            {/* Step 1 — Audit */}
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-bold text-slate-400 text-center uppercase tracking-wider">Step 1</p>
+              <button onClick={auditTopics} disabled={isBusy}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-md">
+                {auditing ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />}
+                Audit
+              </button>
             </div>
-          )}
 
-          {/* Warning */}
-          <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="text-amber-600 flex-shrink-0 mt-0.5" size={20} />
-            <div className="text-sm text-amber-800">
-              <p className="font-bold mb-1">Important Notes:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>This will add subjects with proper categorization (sciences, arts, commercial, general)</li>
-                <li>Sample questions are provided for testing purposes</li>
-                <li>Existing documents with the same IDs will be overwritten</li>
-                <li>You can run this multiple times safely</li>
-              </ul>
+            {/* Step 2 — Clear General */}
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-bold text-slate-400 text-center uppercase tracking-wider">Step 2a</p>
+              <button onClick={clearGeneralTags} disabled={isBusy}
+                className="w-full bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-md">
+                {clearing ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                Clear General
+              </button>
+            </div>
+
+            {/* Step 2b — Clear ALL ✅ NEW */}
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-bold text-slate-400 text-center uppercase tracking-wider">Step 2b</p>
+              <button onClick={clearAllTags} disabled={isBusy}
+                className="w-full bg-red-800 hover:bg-red-900 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-md">
+                {clearingAll ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+                Clear All
+              </button>
             </div>
           </div>
 
-          {/* Subject List Preview */}
-          <div className="mt-8">
-            <h3 className="font-bold text-slate-900 mb-4">Subjects to be seeded:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(SUBJECTS_DATA).map(([category, subjects]) => (
-                <div key={category} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <h4 className="font-bold text-sm text-slate-700 mb-2 capitalize flex items-center gap-2">
-                    {category === 'sciences' && <Beaker size={16} className="text-blue-600" />}
-                    {category === 'arts' && <Palette size={16} className="text-purple-600" />}
-                    {category === 'commercial' && <Calculator size={16} className="text-green-600" />}
-                    {category === 'general' && <Globe size={16} className="text-slate-600" />}
-                    {category}
-                  </h4>
-                  <div className="flex flex-wrap gap-1">
-                    {subjects.map((subject) => (
-                      <span
-                        key={subject.id}
-                        className={`text-[10px] px-2 py-1 rounded-full ${subject.color}`}
-                      >
-                        {subject.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* Step 3 — Auto-Tag */}
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-bold text-slate-400 text-center uppercase tracking-wider">Step 3</p>
+              <button onClick={autoTagQuestions} disabled={isBusy}
+                className="w-full bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-md">
+                {tagging ? <Loader2 className="animate-spin" size={16} /> : <Wand2 size={16} />}
+                Auto-Tag
+              </button>
+            </div>
+
+            {/* Step 4 — Sync */}
+            <div className="flex flex-col gap-1">
+              <p className="text-xs font-bold text-slate-400 text-center uppercase tracking-wider">Step 4</p>
+              <button onClick={updateTopicsOnly} disabled={isBusy}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-md">
+                {loading ? <Loader2 className="animate-spin" size={16} /> : <Tag size={16} />}
+                Sync
+              </button>
             </div>
           </div>
+
+          {/* Log Panel */}
+          <div className="bg-slate-900 rounded-xl p-4 h-80 overflow-y-auto font-mono text-xs border border-slate-700 shadow-inner">
+            {logs.length === 0 ? (
+              <p className="text-slate-500 text-center mt-28">Select a subject and run Audit first...</p>
+            ) : (
+              logs.map((log, i) => (
+                <p key={i} className={`mb-1 leading-relaxed ${
+                  log.includes("❌") ? "text-red-400" :
+                  log.includes("✅") ? "text-emerald-400" :
+                  log.includes("⚠️") ? "text-amber-400" :
+                  log.includes("🎉") || log.includes("🤖") ? "text-yellow-300 font-bold" :
+                  log.includes("⏳") ? "text-blue-300" :
+                  log.includes("🧹") ? "text-orange-300" :
+                  log.includes("─") ? "text-slate-600" :
+                  "text-slate-300"
+                }`}>
+                  {log}
+                </p>
+              ))
+            )}
+          </div>
+
+          {/* Info Footer */}
+          <div className="mt-6 flex items-start gap-3 bg-blue-50 p-4 rounded-xl text-blue-800 text-xs">
+            <CheckCircle className="shrink-0 mt-0.5" size={16} />
+            <div>
+              <p className="font-bold mb-1">Workflow:</p>
+              <p className="leading-relaxed">
+                <strong>1. Audit</strong> — check current topic state and spot rogue IDs like "mechanics" or "electricity-and-magnetism".<br />
+                <strong>2a. Clear General</strong> — resets questions tagged only as <code className="bg-blue-100 px-1 rounded">"general"</code> back to untagged.<br />
+                <strong>2b. Clear All</strong> — wipes ALL tags so you can retag from scratch. Use this when rogue topic IDs exist.<br />
+                <strong>3. Auto-Tag</strong> — assigns topics by scanning question text. Only touches untagged questions.<br />
+                <strong>4. Sync</strong> — updates the subjects collection with topic lists.
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

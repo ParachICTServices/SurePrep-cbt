@@ -181,10 +181,6 @@ const handleRegister = async (e?: React.FormEvent) => {
     } catch (emailError: any) {
       console.error("Email verification error:", emailError);
       
-      // Log detailed error for debugging
-      console.log("Error code:", emailError.code);
-      console.log("Error message:", emailError.message);
-      
       // Show specific error messages
       if (emailError.code === "auth/invalid-email") {
         toast.error("Invalid email address format");
@@ -221,8 +217,7 @@ const handleRegister = async (e?: React.FormEvent) => {
     console.error("Registration error:", error);
     
     // Detailed error logging
-    console.log("Error code:", error.code);
-    console.log("Error message:", error.message);
+   
     
     if (error.code === "auth/email-already-in-use") {
       toast.error("This email is already registered. Please log in.");
@@ -282,8 +277,7 @@ const handleResendVerification = async () => {
     
   } catch (error: any) {
     console.error("Resend error:", error);
-    console.log("Error code:", error.code);
-    console.log("Error message:", error.message);
+
     
     if (error.code === "auth/too-many-requests") {
       toast.error("Too many requests. Please wait 5 minutes before trying again.");
@@ -329,7 +323,7 @@ const handleCheckVerification = async () => {
     }
   } catch (error: any) {
     console.error("Verification check error:", error);
-    console.log("Error code:", error.code);
+
     
     if (error.code === "auth/user-token-expired") {
       toast.error("Session expired. Please log in and request a new verification email.");

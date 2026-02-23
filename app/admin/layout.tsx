@@ -32,9 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const currentUserEmail = user.email?.toLowerCase().trim() || "";
     const allowedAdmins = ADMIN_EMAILS.map(email => email.toLowerCase().trim());
 
-    console.log("Checking Admin Access...");
-    console.log("User:", currentUserEmail);
-    console.log("Allowed:", allowedAdmins);
+
 
     // 2. If logged in but NOT an admin, kick them out
     if (!allowedAdmins.includes(currentUserEmail)) {
