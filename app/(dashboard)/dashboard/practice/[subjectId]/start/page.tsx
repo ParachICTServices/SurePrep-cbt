@@ -2,9 +2,10 @@
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { userService } from "@/app/lib/api/services/userService"; // Your updated service
+import { userService } from "@/app/lib/api/services/userService";
 import { Loader2, BookOpen, ShieldCheck, AlertCircle, ArrowLeft, Coins } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast"; // ✅ Added missing import
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
@@ -12,9 +13,9 @@ export default function StartSubjectPracticePage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const topicFilter = searchParams.get("topic");
+  const topicName = searchParams.get("topicName") || "";
   const router = useRouter();
-  
-  // ✅ Use 'user' and 'refreshUser' from your updated AuthContext
+
   const { user, loading: authLoading, refreshUser } = useAuth();
 
   const subjectId = params.subjectId as string;
@@ -26,13 +27,12 @@ export default function StartSubjectPracticePage() {
 
   useEffect(() => {
     const fetchSubjectName = async () => {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       try {
-        // ✅ Matches GET /subjects/:id
         const res = await fetch(`${API_BASE_URL}/subjects/${subjectId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
         setSubjectName(data.name || "Subject Practice");
@@ -48,59 +48,42 @@ export default function StartSubjectPracticePage() {
     }
   }, [subjectId, authLoading]);
 
+  // ✅ Restored as a proper handler function (was incorrectly floating in component body)
   const handleConfirmStart = async () => {
     if (!user) return;
-    
-    // Check if user has enough credits locally first
-    if (user.credits < cost) {
-      router.push("/dashboard/buy-credits");
-      return;
-    }
+
+    setIsDeducting(true); // ✅ Was never set to true before the async call
 
     try {
-      setIsDeducting(true);
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
 
-      // 1. DEDUCT CREDITS IN BACKEND
-      // Matches POST /users/me/deduct-credits
-      await fetch(`${API_BASE_URL}/users/me/deduct-credits`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({ amount: cost }),
-      });
-
-      // 2. LOG THE USAGE
-      // Matches POST /credit-usage
-      await fetch(`${API_BASE_URL}/credit-usage`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+      const response = await fetch(`${API_BASE_URL}/credits/open-subject-topic`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          examType: "subject-practice",
           subjectId: subjectId,
-          creditsSpent: cost,
-          topic: topicFilter || "All Topics"
+          topic: topicFilter ?? "all-topics",
         }),
       });
 
-      // 3. REFRESH USER DATA (To update the UI credit balance)
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Insufficient credits or invalid session");
+      }
+
       await refreshUser();
 
-      // 4. REDIRECT TO EXAM
       const destination = topicFilter
         ? `/dashboard/practice/${subjectId}/exam?topic=${encodeURIComponent(topicFilter)}`
         : `/dashboard/practice/${subjectId}/exam`;
-      
+
       router.push(destination);
-    } catch (error) {
-      console.error("Failed to start practice:", error);
-      alert("Error processing credits. Please check your connection and try again.");
-      setIsDeducting(false);
+    } catch (error: any) {
+      toast.error(error.message);
+      setIsDeducting(false); // ✅ Only reset on failure; on success we're navigating away
     }
   };
 
@@ -130,9 +113,9 @@ export default function StartSubjectPracticePage() {
             <BookOpen size={32} />
           </div>
           <h1 className="text-2xl font-bold capitalize">{subjectName}</h1>
-          {topicFilter && (
+          {topicName && (
             <p className="text-emerald-200 mt-1 text-sm font-medium capitalize">
-              Topic: {topicFilter.replace(/-/g, " ")}
+              Topic: {topicName}
             </p>
           )}
           <p className="text-emerald-100 mt-2">Ready to start your practice session?</p>
@@ -166,10 +149,8 @@ export default function StartSubjectPracticePage() {
               <BookOpen className="flex-shrink-0" size={20} />
               <p>
                 Session: <strong className="capitalize">{subjectName}</strong>
-                {topicFilter && (
-                  <> ({topicFilter.replace(/-/g, " ")})</>
-                )}
-                . Practice at your own pace.
+                {topicName && <> ({topicName})</>}. Practice at your own
+                pace.
               </p>
             </div>
 

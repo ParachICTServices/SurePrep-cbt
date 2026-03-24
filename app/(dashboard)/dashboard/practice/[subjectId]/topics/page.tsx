@@ -24,24 +24,33 @@ export default function TopicSelectionPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [policy, setPolicy] = useState({ questionsPerCredit: 10 });
 
+  // Merged into a single useEffect to avoid race conditions and duplicate fetches
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       try {
-        const subjectRes = await fetch(`${API_BASE_URL}/subjects/${subjectId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const subjectData = await subjectRes.json();
+        const [policyRes, subjectRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/credits/policy`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`${API_BASE_URL}/subjects/${subjectId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
+        const policyData = await policyRes.json();
+        setPolicy(policyData);
+
+        const subjectData = await subjectRes.json();
         setSubjectName(subjectData.name || subjectId);
         setTotalQuestions(subjectData.questionCount || 0);
         setTopics(subjectData.topics || []);
-
       } catch (error) {
-        console.error("Error fetching topic data:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
@@ -50,9 +59,15 @@ export default function TopicSelectionPage() {
     if (!authLoading && user) fetchData();
   }, [subjectId, user, authLoading]);
 
+  const calculateCredits = (questionCount: number): number => {
+    if (questionCount === 0) return 0;
+    return Math.ceil(questionCount / (policy.questionsPerCredit || 10));
+  };
+
   const handleTopicClick = (topic: Topic) => {
+    const cost = topic.cost ?? calculateCredits(topic.questionCount ?? 0);
     router.push(
-      `/dashboard/practice/${subjectId}/start?topic=${encodeURIComponent(topic.id)}&topicName=${encodeURIComponent(topic.name)}&cost=${topic.cost}&totalQuestions=${topic.questionCount ?? 0}`
+      `/dashboard/practice/${subjectId}/start?topic=${encodeURIComponent(topic.id)}&topicName=${encodeURIComponent(topic.name)}&cost=${cost}&totalQuestions=${topic.questionCount ?? 0}`
     );
   };
 
@@ -72,7 +87,10 @@ export default function TopicSelectionPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 px-4 py-8">
-      <Link href="/dashboard/practice" className="inline-flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition">
+      <Link
+        href="/dashboard/practice"
+        className="inline-flex items-center gap-2 text-slate-500 hover:text-emerald-600 transition"
+      >
         <ArrowLeft size={18} /> Back to Practice Centre
       </Link>
 
@@ -81,16 +99,20 @@ export default function TopicSelectionPage() {
         <p className="text-slate-500 mt-2">Choose a specific topic or select "All Topics"</p>
       </div>
 
-      
+      {/* All Topics Card */}
       <div
         onClick={handleAllTopics}
         className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-6 rounded-2xl cursor-pointer hover:shadow-xl transition group relative overflow-hidden text-white"
       >
         <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
-          <span className="font-bold text-sm flex items-center gap-1"><Coins size={14} /> 0 credits</span>
+          <span className="font-bold text-sm flex items-center gap-1">
+            <Coins size={14} /> 0 credits
+          </span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-white/20 rounded-xl"><Sparkles size={28} /></div>
+          <div className="p-3 bg-white/20 rounded-xl">
+            <Sparkles size={28} />
+          </div>
           <div>
             <h3 className="text-xl font-bold">All Topics</h3>
             <p className="text-emerald-100 text-sm">Practice {totalQuestions} mixed questions</p>
@@ -102,7 +124,8 @@ export default function TopicSelectionPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {topics.map((topic) => {
           const count = topic.questionCount ?? 0;
-          const cost = topic.cost ?? 0;
+          // Use cost from API directly; fall back to calculateCredits if not provided
+          const cost = topic.cost ?? calculateCredits(count);
 
           return (
             <div
