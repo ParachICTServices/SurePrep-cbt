@@ -22,22 +22,19 @@ export default function AdminOverview() {
     const token = localStorage.getItem('auth_token');
     
     try {
-      // 1. Fetch Admin Dashboard Summary
-      // Matches GET /admin/dashboard
+     
       const dashRes = await fetch(`${API_BASE_URL}/admin/dashboard`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const dashData = await dashRes.json();
 
-      // 2. Fetch Recent Users (Paginated admin route)
-      // Matches GET /users/admin
+     
       const usersRes = await fetch(`${API_BASE_URL}/users/admin?limit=5&page=1`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const usersData = await usersRes.json();
 
-      // 3. Fetch Subject Distribution Stats
-      // Matches GET /subjects/admin/stats/summary
+      
       const subjectStatsRes = await fetch(`${API_BASE_URL}/subjects/admin/stats/summary`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -55,14 +52,29 @@ export default function AdminOverview() {
       const usersArray = Array.isArray(usersData) ? usersData : (usersData.data || []);
       setRecentUsers(usersArray);
 
-      // Set Subject Distribution
+      // Primary source: subject stats summary
       const distArray = Array.isArray(subjectStatsData) ? subjectStatsData : (subjectStatsData.data || []);
-      const formattedDist = distArray.map((s: any) => ({
+      let formattedDist = distArray.map((s: any) => ({
         name: s.name,
-        count: s.questionCount || 0,
+        count: Number(s.questionCount ?? s.totalQuestions ?? s.questions ?? s.count ?? 0),
         color: s.color || "bg-slate-100 text-slate-600"
       })).sort((a: any, b: any) => b.count - a.count);
-      
+
+      // Fallback source: subjects endpoint (supports older API shapes or if questionCount missing)
+      if (formattedDist.length === 0 || formattedDist.every((s: {count:number}) => s.count === 0)) {
+        const subjectsRes = await fetch(`${API_BASE_URL}/subjects`, { headers: { 'Authorization': `Bearer ${token}` }});
+        const subjectsData = await subjectsRes.json();
+        const subjectsArray = Array.isArray(subjectsData) ? subjectsData : (subjectsData.data || []);
+        const fallbackDist: {name:string; count:number; color:string}[] = subjectsArray.map((s: any) => ({
+          name: s.name,
+          count: Number(s.questionCount ?? s.totalQuestions ?? s.questions ?? s.count ?? 0),
+          color: s.color || "bg-slate-100 text-slate-600"
+        }));
+        if (fallbackDist.length > 0) {
+          formattedDist = fallbackDist.sort((a, b) => b.count - a.count);
+        }
+      }
+
       setSubjectDist(formattedDist);
 
     } catch (e) {

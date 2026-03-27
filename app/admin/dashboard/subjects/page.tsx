@@ -15,6 +15,7 @@ interface Subject {
   name: string;
   color: string;
   createdAt?: string;
+  questionCount?: number;
 }
 
 export default function SubjectsManager() {
@@ -66,27 +67,41 @@ export default function SubjectsManager() {
             id: s.id || s._id,
             name: s.name,
             color: s.color,
-            createdAt: s.createdAt
+            createdAt: s.createdAt,
+            questionCount: s.questionCount ?? 0,
         }));
 
         setSubjects(formatted);
 
-        // 2. Fetch question counts per subject
+        // Use questionCount from subject listing if available, otherwise fallback to fetch
         const counts: Record<string, number> = {};
-        await Promise.all(
-          formatted.map(async (sub: Subject) => {
-            try {
-              // Matches GET /questions with limit 1 to get "total"
-              const qRes = await fetch(`${API_BASE_URL}/questions?subjectId=${sub.id}&limit=1`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-              });
-              const qData = await qRes.json();
-              counts[sub.id] = qData.total || qData.count || 0;
-            } catch (e) {
-              counts[sub.id] = 0;
-            }
-          })
-        );
+        let needsCountFetch = false;
+
+        formatted.forEach((sub: Subject) => {
+          if (typeof sub.questionCount === 'number') {
+            counts[sub.id] = sub.questionCount;
+          } else {
+            needsCountFetch = true;
+          }
+        });
+
+        if (needsCountFetch) {
+          await Promise.all(
+            formatted.map(async (sub: Subject) => {
+              if (counts[sub.id] !== undefined) return;
+              try {
+                const qRes = await fetch(`${API_BASE_URL}/questions?subjectId=${sub.id}&limit=1`, {
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const qData = await qRes.json();
+                counts[sub.id] = qData.total || qData.count || 0;
+              } catch {
+                counts[sub.id] = 0;
+              }
+            })
+          );
+        }
+
         setQuestionCounts(counts);
       } catch (error) {
         console.error("Error fetching subjects:", error);

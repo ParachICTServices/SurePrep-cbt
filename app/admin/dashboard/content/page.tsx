@@ -67,6 +67,7 @@ export default function ContentManager() {
   const [subCategory, setSubCategory] = useState<"sciences" | "arts" | "commercial" | "general">("general");
 
   const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedSubjectSlug, setSelectedSubjectSlug] = useState("");
   const [qText, setQText] = useState("");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [correctOpt, setCorrectOpt] = useState(0);
@@ -87,7 +88,12 @@ export default function ContentManager() {
   const [bulkImages, setBulkImages] = useState<{[key: number]: File}>({});
   const [bulkImagePreviews, setBulkImagePreviews] = useState<{[key: number]: string}>({});
 
-  const availableTopics = getTopicsForSubject(selectedSubject);
+  const selectedSubjectData = subjects.find(sub => sub.id === selectedSubject);
+  const availableTopics: string[] = selectedSubjectData?.topics?.length
+    ? selectedSubjectData.topics
+        .map((t: string | { name?: string }) => (typeof t === 'string' ? t : t.name || ""))
+        .filter((t: any): t is string => Boolean(t))
+    : getTopicsForSubject(selectedSubjectData?.slug || selectedSubjectSlug || selectedSubject);
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -99,16 +105,24 @@ export default function ContentManager() {
         const data = await response.json();
         const subjectsArray = Array.isArray(data) ? data : (data.data || []);
         
-        const formatted = subjectsArray.map((s: any) => ({
-            id: s.id || s._id,
-            name: s.name,
-            color: s.color,
-            category: s.category
-        }));
+        const formatted = subjectsArray.map((s: any) => {
+            const slug = s.slug || (s.name ? s.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and') : '');
+            return {
+              id: s.id || s._id,
+              name: s.name,
+              color: s.color,
+              category: s.category,
+              slug,
+              topics: Array.isArray(s.topics) ? s.topics : [],
+              questionCount: s.questionCount ?? 0,
+              createdAt: s.createdAt
+            };
+        });
 
         setSubjects(formatted);
         if (formatted.length > 0) {
           setSelectedSubject(formatted[0].id);
+          setSelectedSubjectSlug(formatted[0].slug || '');
           setBulkSubject(formatted[0].id);
         }
       } catch (e) {
@@ -458,7 +472,12 @@ export default function ContentManager() {
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileText className="text-emerald-600"/> Add New Question</h2>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Select Subject</label>
-              <select className="w-full p-3 border border-slate-300 rounded-xl outline-none capitalize focus:ring-2 focus:ring-emerald-500" value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}>
+              <select className="w-full p-3 border border-slate-300 rounded-xl outline-none capitalize focus:ring-2 focus:ring-emerald-500" value={selectedSubject} onChange={e => {
+                const subjectId = e.target.value;
+                const subject = subjects.find(sub => sub.id === subjectId);
+                setSelectedSubject(subjectId);
+                setSelectedSubjectSlug(subject?.slug || '');
+              }}>
                 {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.name} {sub.category && `(${sub.category})`}</option>)}
               </select>
             </div>
@@ -544,7 +563,12 @@ export default function ContentManager() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Select Subject</label>
-              <select className="w-full p-3 border border-slate-300 rounded-xl outline-none capitalize focus:ring-2 focus:ring-emerald-500" value={bulkSubject} onChange={(e) => setBulkSubject(e.target.value)}>
+              <select className="w-full p-3 border border-slate-300 rounded-xl outline-none capitalize focus:ring-2 focus:ring-emerald-500" value={bulkSubject} onChange={(e) => {
+                const subjectId = e.target.value;
+                const subject = subjects.find((sub) => sub.id === subjectId);
+                setBulkSubject(subjectId);
+                setSelectedSubjectSlug(subject?.slug || '');
+              }}>
                 {subjects.map((sub) => <option key={sub.id} value={sub.id}>{sub.name} {sub.category && `(${sub.category})`}</option>)}
               </select>
             </div>
