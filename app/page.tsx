@@ -309,8 +309,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
-        {/* ✨ NEW SECTION 1: How It Works — Numbered editorial layout with diagonal accent */}
         <section className="py-28 bg-slate-950 text-white relative overflow-hidden">
           {/* Diagonal stripe decoration */}
           <div className="absolute inset-0 opacity-[0.04]" style={{
@@ -414,8 +412,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ✨ NEW SECTION 2: Testimonials — Raw, real, slightly messy on purpose */}
-        <section className="py-28 bg-white relative overflow-hidden">
+               <section className="py-28 bg-white relative overflow-hidden">
           {/* Faint ruled-paper lines in background */}
           <div className="absolute inset-0 opacity-[0.025]" style={{
             backgroundImage: 'repeating-linear-gradient(transparent, transparent 31px, #065f46 31px, #065f46 32px)',
@@ -438,8 +435,7 @@ export default function LandingPage() {
               <p className="text-slate-400 max-w-xs text-sm leading-relaxed">These are actual students who used . We didn't ask them to be nice about it.</p>
             </motion.div>
 
-            {/* Testimonial grid — intentionally varied sizes & rotations */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-5">
+               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-5">
               
               {/* Big card — left */}
               <motion.div

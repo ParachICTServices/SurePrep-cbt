@@ -11,9 +11,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="font-cabinet-grotesk">
-      <head>
-<link rel="stylesheet" href="https:
-      </head>
       <body>
         <AuthProvider>{children}</AuthProvider>
         <Toaster />
