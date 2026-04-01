@@ -21,7 +21,7 @@ const staggerContainer = {
 };
 
 const Typewriter = () => {
-  const words = ["JAMB CBT", "WAEC OBJ", "NECO", "Post-UTME", "Any Exam"];
+  const words = ["CBT FOR JAMB ", "WAEC", "NECO", "Post-UTME", "Any Exam"];
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export default function LandingPage() {
 
       <main className="flex-grow">
         
-        {/* 🌟 Hero Section — dark, textured, editorial */}
+        {/*Hero Section */}
         <section className="relative bg-slate-950 text-white overflow-hidden min-h-screen flex items-center">
 
           {/* Diagonal dot-grid texture */}
@@ -127,7 +127,6 @@ export default function LandingPage() {
           <div className="absolute -bottom-40 -right-20 w-[500px] h-[500px] bg-teal-500/10 rounded-full blur-3xl" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-emerald-600/5 rounded-full blur-3xl" />
 
-          {/* Thin horizontal rule lines — like lined paper */}
           <div className="absolute inset-0 opacity-[0.03]" style={{
             backgroundImage: 'repeating-linear-gradient(transparent, transparent 63px, #10b981 63px, #10b981 64px)',
             backgroundSize: '100% 64px'
@@ -143,7 +142,7 @@ export default function LandingPage() {
             <motion.div variants={fadeInUp} className="inline-flex items-center gap-2.5 mb-10">
               <span className="h-px w-8 bg-emerald-500/60" />
               <span className="text-emerald-400 font-mono text-xs uppercase tracking-[0.25em]">
-                CBT Practice Made Simple
+              JAMB CBT PRACTICE MADE EASY
               </span>
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -165,8 +164,7 @@ export default function LandingPage() {
               variants={fadeInUp}
               className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed font-medium"
             >
-              Thousands of past questions, timed mock exams, and real-time analytics.
-              Built for Nigerian students who are serious about admission.
+                Get the best JAMB CBT practice experience with the SurePrep app . Access over 10,000 past questions. Start your exams CBT online practice today.
             </motion.p>
 
             {/* CTAs */}
