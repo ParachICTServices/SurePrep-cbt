@@ -9,7 +9,6 @@ import { fullClean } from "@/app/lib/bulkTextCleaner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
-// TOPIC CONFIGURATION (Preserved)
 const SUBJECT_TOPICS: Record<string, string[]> = {
   mathematics: ['Algebra', 'Calculus', 'Trigonometry', 'Statistics & Probability', 'Geometry', 'Vectors & Mechanics', 'Number Theory', 'Logarithms'],
   physics: ['Mechanics', 'Electricity & Magnetism', 'Waves & Sound', 'Light & Optics', 'Heat & Thermodynamics', 'Modern Physics', 'Atomic Structure'],
@@ -23,7 +22,6 @@ const SUBJECT_TOPICS: Record<string, string[]> = {
   commerce: ['Trade', 'Banking', 'Insurance', 'Business Organization'],
 };
 
-// Utilities (Preserved)
 function formatTopicId(topic: string): string { return topic.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and'); }
 function getTopicsForSubject(subjectId: string): string[] { return SUBJECT_TOPICS[subjectId.toLowerCase()] || []; }
 
@@ -181,7 +179,6 @@ export default function ContentManager() {
     setLoading(true);
     const token = localStorage.getItem('auth_token');
     try {
-      // ✅ Matches POST /subjects/admin
       const response = await fetch(`${API_BASE_URL}/subjects/admin`, {
         method: 'POST',
         headers: { 
@@ -223,7 +220,6 @@ export default function ContentManager() {
 
       const topicIds = selectedTopics.map(formatTopicId);
 
-      // ✅ Matches POST /questions/admin
       const response = await fetch(`${API_BASE_URL}/questions/admin`, {
         method: 'POST',
         headers: { 
@@ -373,7 +369,6 @@ export default function ContentManager() {
       const imageURLs: {[key: number]: string | null} = {};
       imageResults.forEach(r => { imageURLs[r.index] = r.url; });
 
-      // ✅ Matches POST /questions/admin/upload
       const payload = parsedQuestions.map((q, idx) => ({
         subjectId: bulkSubject,
         questionText: q.questionText,

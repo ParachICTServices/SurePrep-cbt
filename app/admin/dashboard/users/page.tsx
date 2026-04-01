@@ -13,7 +13,6 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [updating, setUpdating] = useState(false);
 
-  // Custom Modal State
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     userId: string | null;
@@ -24,12 +23,10 @@ export default function AdminUsers() {
     userName: null
   });
 
-  // ✅ Fetch Users from API (Matches GET /users/admin)
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response: any = await apiClient.get('/users/admin?limit=100');
-        // Handle array response or paginated object
         const data = Array.isArray(response) ? response : (response.data || response.results || []);
         setUsers(data);
       } catch (e) {
@@ -50,13 +47,11 @@ export default function AdminUsers() {
     setConfirmDialog({ isOpen: false, userId: null, userName: null });
   };
 
-  // ✅ Delete User (Matches standard admin DELETE pattern)
   const executeDelete = async () => {
     if (!confirmDialog.userId) return;
 
     setUpdating(true);
     try {
-      // Note: Assuming standard DELETE endpoint based on admin patterns
       await apiClient.delete(`/users/admin/${confirmDialog.userId}`);
       
       setUsers(prev => prev.filter(u => (u.id || u._id) !== confirmDialog.userId));
@@ -74,7 +69,6 @@ export default function AdminUsers() {
     }
   };
 
-  // ✅ Add Credits (Matches PATCH /users/admin/{id}/credits)
   const handleAddCredits = async (u: any, amount: number) => {
     const userId = u.id || u._id;
     setUpdating(true);

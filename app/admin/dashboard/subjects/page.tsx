@@ -7,7 +7,6 @@ import {
   Loader2, Edit2, Trash2, X, Save, LayoutGrid, AlertTriangle, Palette
 } from "lucide-react";
 
-// API Base URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 interface Subject {
@@ -56,7 +55,6 @@ export default function SubjectsManager() {
       if (!token) return;
 
       try {
-        // 1. Fetch Subjects (Matches GET /subjects)
         const sRes = await fetch(`${API_BASE_URL}/subjects`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -73,7 +71,6 @@ export default function SubjectsManager() {
 
         setSubjects(formatted);
 
-        // Use questionCount from subject listing if available, otherwise fallback to fetch
         const counts: Record<string, number> = {};
         let needsCountFetch = false;
 
@@ -123,7 +120,6 @@ export default function SubjectsManager() {
     setSaving(true);
     const token = localStorage.getItem('auth_token');
     try {
-      // ✅ Matches PATCH /subjects/admin/{id}
       const response = await fetch(`${API_BASE_URL}/subjects/admin/${editingSubject.id}`, {
         method: 'PATCH',
         headers: { 
@@ -169,8 +165,6 @@ export default function SubjectsManager() {
     setDeleting(true);
     const token = localStorage.getItem('auth_token');
     try {
-      // ✅ Matches DELETE /subjects/admin/{id}
-      // Note: Backend usually handles cascading delete of questions
       const response = await fetch(`${API_BASE_URL}/subjects/admin/${subjectId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }

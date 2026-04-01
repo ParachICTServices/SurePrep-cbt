@@ -11,7 +11,6 @@ export default function StartExamPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  // ✅ Use 'user' and 'refreshUser' from your new AuthContext
   const { user, loading: authLoading, refreshUser } = useAuth();
   
   const examType = searchParams.get("type");
@@ -98,7 +97,6 @@ export default function StartExamPage() {
   const handleConfirmStart = async () => {
     if (!user) return;
     
-    // Check local balance before triggering API
     if (user.credits < cost) {
       router.push("/dashboard/buy-credits");
       return;
@@ -108,8 +106,6 @@ export default function StartExamPage() {
       setIsDeducting(true);
       const token = localStorage.getItem('auth_token');
 
-      // 1. DEDUCT CREDITS IN BACKEND
-      // Matches POST /users/me/deduct-credits
       const deductRes = await fetch(`${API_BASE_URL}/users/me/deduct-credits`, {
         method: 'POST',
         headers: { 
@@ -121,8 +117,6 @@ export default function StartExamPage() {
 
       if (!deductRes.ok) throw new Error("Deduction failed");
 
-      // 2. LOG THE USAGE
-      // Matches POST /credit-usage
       await fetch(`${API_BASE_URL}/credit-usage`, {
         method: 'POST',
         headers: { 
@@ -136,10 +130,8 @@ export default function StartExamPage() {
         }),
       });
 
-      // 3. REFRESH USER DATA
       await refreshUser();
 
-      // 4. REDIRECT
       router.push(`/dashboard/mock?type=${examType}`);
 
     } catch (error) {

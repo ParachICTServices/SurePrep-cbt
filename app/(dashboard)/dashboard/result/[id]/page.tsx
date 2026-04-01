@@ -5,18 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, XCircle, ArrowLeft, Lock, Zap, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-// API Base URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 export default function ExamResultReview() {
   const { id } = useParams();
-  // ✅ Use 'user' from your new AuthContext
   const { user, loading: authLoading } = useAuth();
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Adapt to your backend's user roles/status logic
-  const isPremium = user?.credits && user.credits > 0; // Or user?.subscriptionStatus === 'premium'
+const isPremium = user?.credits && user.credits > 0;
 
   useEffect(() => {
     const fetchResult = async () => {
@@ -24,7 +21,6 @@ export default function ExamResultReview() {
       const token = localStorage.getItem('auth_token');
       
       try {
-        // ✅ Matches GET /test-results/my/{id}
         const response = await fetch(`${API_BASE_URL}/test-results/my/${id}`, {
           headers: { 
             'Authorization': `Bearer ${token}` 
@@ -35,13 +31,12 @@ export default function ExamResultReview() {
 
         const data = await response.json();
         
-        // Map backend data to your existing state structure
         const cleanResult: any = {
           subject: data.subject || data.subjectName || 'Unknown',
           score: data.score || 0,
           totalQuestions: data.totalQuestions || 0,
           percentage: data.percentage || 0,
-          history: data.history || [], // Ensure your backend sends the 'history' array
+history: data.history || [],
           date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'Recent'
         };
         
@@ -125,7 +120,7 @@ export default function ExamResultReview() {
                   if (optIdx === q.correctOption) {
                     optionColor = "bg-emerald-100 border-emerald-500 text-emerald-900 font-bold";
                   } else if (optIdx === q.selectedOption && !isCorrect) {
-                    optionColor = "bg-red-100 border-red-500 text-red-900"; // User's Wrong Choice
+optionColor = "bg-red-100 border-red-500 text-red-900";
                   }
 
                   return (

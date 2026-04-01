@@ -162,7 +162,6 @@ export default function RegisterOnboarding() {
     setLoading(true);
 
     try {
-      // Call your API registration endpoint
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
@@ -183,7 +182,7 @@ export default function RegisterOnboarding() {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Store user ID for verification step
+  
       setUserId(data.user.id || data.userId);
 
       await fetch(`${API_BASE_URL}/auth/send-verification-otp`, {
@@ -194,7 +193,7 @@ export default function RegisterOnboarding() {
 
 setStep('verify');
       
-      // If API returns verification token or link
+    
       if (data.verificationToken) {
         setVerificationToken(data.verificationToken);
       }
@@ -205,8 +204,7 @@ setStep('verify');
 
     } catch (error: any) {
       console.error("Registration error:", error);
-      
-      // Handle specific errors
+     
       if (error.message.includes("email already exists") || error.message.includes("already registered")) {
         toast.error("This email is already registered. Please log in.");
       } else if (error.message.includes("weak password")) {
@@ -227,7 +225,7 @@ const handleResendVerification = async () => {
     const response = await fetch(`${API_BASE_URL}/auth/send-verification-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }), // Backend needs the email to send OTP
+body: JSON.stringify({ email }),
     });
 
     if (!response.ok) throw new Error('Failed to send OTP');
@@ -240,7 +238,7 @@ const handleResendVerification = async () => {
   }
 };
 
-// ✅ VERIFY OTP (Updated from handleCheckVerification)
+
 const handleVerifyOTP = async () => {
   if (otp.length < 4) {
     toast.error("Please enter the full OTP code");
@@ -252,7 +250,7 @@ const handleVerifyOTP = async () => {
     const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp }), // Matches VerifyEmailDto
+      body: JSON.stringify({ email, otp }), 
     });
 
     const data = await response.json();
@@ -269,7 +267,7 @@ const handleVerifyOTP = async () => {
     setLoading(false);
   }
 };
-  // ✅ CHECK VERIFICATION STATUS
+
   const handleCheckVerification = async () => {
     if (!userId) {
       toast.error("No user found. Please try registering again.");
@@ -307,7 +305,6 @@ const handleVerifyOTP = async () => {
     }
   };
 
-  // ✅ PURCHASE CREDITS
   const handlePurchaseCredits = async () => {
     if (!userId) {
       toast.error("User session not found. Please try again.");
@@ -341,7 +338,6 @@ const handleVerifyOTP = async () => {
           try {
             toast.loading("Confirming payment...");
 
-            // ✅ VERIFY PAYMENT WITH YOUR API
             const response = await fetch(`${API_BASE_URL}/payments/verify`, {
               method: "POST",
               headers: { 
@@ -363,14 +359,14 @@ const handleVerifyOTP = async () => {
               throw new Error(data.message || "Verification failed");
             }
 
-            // Store auth token if API returns it
+           
             if (data.token) {
               localStorage.setItem('auth_token', data.token);
             }
 
             toast.success(`Welcome! ${data.creditsAdded || (selectedPackage.credits + selectedPackage.bonus)} credits added to your account! 🎉`);
             
-            // Small delay for better UX
+           
             setTimeout(() => {
               window.location.href = "/dashboard";
             }, 1000);
@@ -401,7 +397,6 @@ const handleVerifyOTP = async () => {
 
   const handleFreePlan = async () => {
     try {
-      // ✅ LOGIN AFTER FREE PLAN SELECTION
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -416,7 +411,6 @@ const handleVerifyOTP = async () => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Store auth token
       if (data.token) {
         localStorage.setItem('auth_token', data.token);
       }

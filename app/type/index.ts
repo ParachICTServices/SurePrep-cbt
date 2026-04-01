@@ -1,5 +1,5 @@
 export interface User {
-  id: string; // Changed from uid to id
+id: string;
   email: string;
   displayName: string | null;
   examCategory: 'senior' | 'junior' | 'professional';
@@ -8,7 +8,6 @@ export interface User {
   totalCreditsEarned: number; 
   emailVerified: boolean;
   createdAt: string;
-  // Optional field for frontend transitions
   idToken?: string; 
 }
 
@@ -16,22 +15,21 @@ export interface Question {
   id: string;
   questionText: string;
   options: string[];
-  correctOption: number; // Index 0-3
+correctOption: number;
   explanation?: string; 
-  subjectId: string; // Changed from subject string to match API logic
+subjectId: string;
   topic?: string;
   imageURL?: string | null;
 }
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
   user: User;
 }
 
-// NEW: Matches the package selection logic in your Registration & Payment pages
 export const CREDIT_PACKAGES = [
   {
-    id: 'starter-basic', // Matches the package ID used in your payment logic
+id: 'starter-basic',
     name: 'Basic Pack',
     credits: 100,
     price: 2000, 
@@ -67,7 +65,6 @@ export interface CreditTransaction {
   createdAt: string;
 }
 
-// These represent how much the backend deducts via /users/me/deduct-credits
 export const CREDIT_COSTS = {
   subjectPractice: 5,
   jambMock: 20,      

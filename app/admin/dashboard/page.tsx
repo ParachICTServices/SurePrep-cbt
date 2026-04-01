@@ -40,7 +40,6 @@ export default function AdminOverview() {
       });
       const subjectStatsData = await subjectStatsRes.json();
 
-      // Set aggregate stats
       setStats({
         users: dashData.totalUsers || 0,
         questions: dashData.totalQuestions || 0,
@@ -48,11 +47,9 @@ export default function AdminOverview() {
         totalCredits: dashData.totalCreditsCirculating || 0,
       });
 
-      // Set Recent Users
       const usersArray = Array.isArray(usersData) ? usersData : (usersData.data || []);
       setRecentUsers(usersArray);
 
-      // Primary source: subject stats summary
       const distArray = Array.isArray(subjectStatsData) ? subjectStatsData : (subjectStatsData.data || []);
       let formattedDist = distArray.map((s: any) => ({
         name: s.name,
@@ -60,7 +57,6 @@ export default function AdminOverview() {
         color: s.color || "bg-slate-100 text-slate-600"
       })).sort((a: any, b: any) => b.count - a.count);
 
-      // Fallback source: subjects endpoint (supports older API shapes or if questionCount missing)
       if (formattedDist.length === 0 || formattedDist.every((s: {count:number}) => s.count === 0)) {
         const subjectsRes = await fetch(`${API_BASE_URL}/subjects`, { headers: { 'Authorization': `Bearer ${token}` }});
         const subjectsData = await subjectsRes.json();
@@ -105,7 +101,6 @@ export default function AdminOverview() {
     }
   };
 
-  // Helper logic for custom colors (Preserved)
   const extractBackgroundColor = (colorString: string): string => {
     const colorMap: {[key: string]: string} = {
       'bg-blue-100': '#DBEAFE', 'bg-blue-600': '#2563EB',

@@ -43,7 +43,6 @@ const CREDIT_PACKAGES = [
 ];
 
 export default function BuyCreditsPage() {
-  // ✅ Use 'user' and 'refreshUser' from your new AuthContext
   const { user, refreshUser } = useAuth();
   const [selectedPackage, setSelectedPackage] = useState(CREDIT_PACKAGES[0]); 
   const [loading, setLoading] = useState(false);
@@ -75,14 +74,11 @@ export default function BuyCreditsPage() {
           try {
             toast.loading("Verifying payment...");
 
-            // ✅ CALL BACKEND TO VERIFY AND ADD CREDITS
-            // Matches POST /payments/verify
             await userService.verifyPayment(transaction.reference, selectedPackage.id);
 
             toast.dismiss();
             toast.success(`Purchase successful! Credits added to your account. 🎉`);
             
-            // ✅ Refresh the global user state to update the balance in the header/UI
             await refreshUser();
             setLoading(false);
             

@@ -26,7 +26,6 @@ export default function TopicSelectionPage() {
   const [loading, setLoading] = useState(true);
   const [policy, setPolicy] = useState({ questionsPerCredit: 10 });
 
-  // Merged into a single useEffect to avoid race conditions and duplicate fetches
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem("auth_token");
@@ -124,7 +123,6 @@ export default function TopicSelectionPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {topics.map((topic) => {
           const count = topic.questionCount ?? 0;
-          // Use cost from API directly; fall back to calculateCredits if not provided
           const cost = topic.cost ?? calculateCredits(count);
 
           return (

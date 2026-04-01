@@ -11,7 +11,6 @@ const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
   .map(email => email.trim().toLowerCase());
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  // ✅ Use 'logout' from your custom AuthContext
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -26,11 +25,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
 
-    // 🔍 ROBUST CHECK: Preserve your email-based authorization logic
     const currentUserEmail = user.email?.toLowerCase().trim() || "";
     const allowedAdmins = ADMIN_EMAILS.map(email => email.toLowerCase().trim());
 
-    // If logged in but NOT in the admin list, redirect to user dashboard
     if (!allowedAdmins.includes(currentUserEmail)) {
       toast.error(`ACCESS DENIED.\n\nYou are logged in as: ${user.email}\n\nBut the Admin list only allows authorized personnel.`);
       router.push("/dashboard");
@@ -47,7 +44,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = async () => {
     try {
-      // ✅ Calls the custom API logout (clears token & state)
       await logout();
       router.push("/admin/login");
     } catch (error) {

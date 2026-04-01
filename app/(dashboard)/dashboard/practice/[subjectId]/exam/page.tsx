@@ -24,7 +24,7 @@ export default function ExamInterface() {
   const { user } = useAuth();
 
   const topicFilter = searchParams.get("topic");
-  const subsParam = searchParams.get("subjectIds"); // ✅ Was used but never declared
+const subsParam = searchParams.get("subjectIds");
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQIndex, setCurrentQIndex] = useState(0);
@@ -47,7 +47,6 @@ export default function ExamInterface() {
     return shuffled;
   }
 
-  // ✅ Fetch subject name (was missing entirely — used in POST body but never populated)
   useEffect(() => {
     const fetchSubjectName = async () => {
       const token = localStorage.getItem("auth_token");
@@ -102,7 +101,6 @@ export default function ExamInterface() {
     fetchQuestions();
   }, [subjectId, topicFilter, subsParam]);
 
-  // ✅ Wrapped in useCallback so the timer effect has a stable reference and doesn't re-run on every render
   const handleSubmit = useCallback(async () => {
     const token = localStorage.getItem("auth_token");
     let newScore = 0;
@@ -145,7 +143,6 @@ export default function ExamInterface() {
     }
   }, [questions, selectedOptions, subjectId, subjectName, topicFilter]);
 
-  // Timer logic — depends on stable handleSubmit reference
   useEffect(() => {
     if (submitted || loading || questions.length === 0) return;
     const timer = setInterval(() => {
@@ -161,7 +158,6 @@ export default function ExamInterface() {
     return () => clearInterval(timer);
   }, [submitted, loading, questions.length, handleSubmit]);
 
-  // Prevention logic (refresh/back)
   useEffect(() => {
     if (submitted || loading || allowNavigation) return;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {

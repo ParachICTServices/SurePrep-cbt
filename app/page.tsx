@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, CheckCircle, Lock, Zap, Star, MapPin, Mail, Phone, Twitter, Instagram, Facebook, ShieldCheck, BookOpen, Clock, TrendingUp, Quote } from 'lucide-react'; 
 
-// 🌟 Animation Variants for "Top End" Feel
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.8 } }
@@ -21,7 +20,6 @@ const staggerContainer = {
   }
 };
 
-// 🌟 Typewriter Component
 const Typewriter = () => {
   const words = ["JAMB CBT", "WAEC OBJ", "NECO", "Post-UTME", "Any Exam"];
   const [index, setIndex] = useState(0);
@@ -60,7 +58,6 @@ const Typewriter = () => {
   );
 };
 
-// 🌟 Animated Counter Component
 const Counter = ({ target, suffix = "" }: { target: number; suffix?: string }) => {
   const [count, setCount] = useState(0);
   const [started, setStarted] = useState(false);

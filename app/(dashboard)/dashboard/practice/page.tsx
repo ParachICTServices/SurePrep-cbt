@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// Base URL for API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 interface Subject {
@@ -18,7 +17,6 @@ interface Subject {
   category: 'sciences' | 'arts' | 'commercial' | 'general';
 }
 
-// Config for simulations (Keep this hardcoded for UI/Design purposes)
 const ALL_EXAM_TYPES = [
   {
     id: "jamb",
@@ -141,7 +139,6 @@ export default function PracticeSelection() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Derived values from context
   const userExamCategory = user?.examCategory || "senior";
   const userCredits = user?.credits || 0;
   const userSpecialization = user?.specialization || 'general';
@@ -164,27 +161,20 @@ export default function PracticeSelection() {
     
     const rawData = await response.json();
 
-    // 1. 🛡️ DEBUG: See exactly what the server is sending
     console.log("API RAW DATA:", rawData);
 
-    // 2. 🛡️ DATA FINDER: Ensure we find the array inside the response
     let subjectsArray = [];
     
     if (Array.isArray(rawData)) {
-      // Format: [ {...}, {...} ]
       subjectsArray = rawData;
     } else if (rawData.results && Array.isArray(rawData.results)) {
-      // Format: { results: [ {...} ] }
       subjectsArray = rawData.results;
     } else if (rawData.data && Array.isArray(rawData.data)) {
-      // Format: { data: [ {...} ] }
       subjectsArray = rawData.data;
     } else if (rawData.subjects && Array.isArray(rawData.subjects)) {
-      // Format: { subjects: [ {...} ] }
       subjectsArray = rawData.subjects;
     }
 
-    // 3. Map the data into the format the UI expects
     let filtered: Subject[] = subjectsArray.map((s: any) => ({
         id: s.id || s._id,
         name: s.name || "Unnamed Subject",
@@ -192,14 +182,12 @@ export default function PracticeSelection() {
         color: s.color || 'bg-blue-100 text-blue-600'
     }));
 
-    // 4. Apply filters based on specialization
     if (userSpecialization && userSpecialization !== 'general') {
         filtered = filtered.filter(s => 
           s.category === userSpecialization || s.category === 'general'
         );
     }
 
-    // 5. Sort the list
     filtered.sort((a, b) => {
       if (a.category === 'general' && b.category !== 'general') return -1;
       if (a.category !== 'general' && b.category === 'general') return 1;

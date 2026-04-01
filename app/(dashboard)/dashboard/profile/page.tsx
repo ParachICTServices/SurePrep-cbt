@@ -5,15 +5,12 @@ import { User as UserIcon, Mail, CreditCard, LogOut, Shield, GraduationCap, Scho
 import Link from "next/link";
 
 export default function ProfilePage() {
-  // ✅ Using 'user', 'logout', and 'loading' from your new custom AuthContext
   const { user, logout, loading } = useAuth();
   const router = useRouter();
 
   const handleLogout = async () => {
     try {
       await logout();
-      // Router push is handled inside the logout function in context, 
-      // but we keep the logic clean here.
     } catch (error) {
       console.error("Logout failed", error);
     }
@@ -36,7 +33,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Get exam category display info based on custom backend strings
   const getExamCategoryInfo = () => {
     const category = user?.examCategory || 'senior';
     
@@ -54,7 +50,6 @@ export default function ProfilePage() {
 
   if (loading) return <div className="p-10 flex justify-center text-slate-500">Loading Profile...</div>;
 
-  // Map values from your backend User object
   const userCredits = user?.credits || 0;
   const totalCreditsEarned = user?.totalCreditsEarned || 0;
 

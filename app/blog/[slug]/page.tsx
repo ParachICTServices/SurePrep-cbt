@@ -7,7 +7,6 @@ import { PortableText } from '@portabletext/react'
 
 export const dynamic = 'force-dynamic'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface SidebarArticle {
   _id: string
   title: string
@@ -18,7 +17,6 @@ interface SidebarArticle {
   excerpt?: string
 }
 
-// ─── Portable Text components ─────────────────────────────────────────────────
 const ptComponents = {
   block: {
     normal: ({ children }: any) => (
@@ -62,7 +60,6 @@ const ptComponents = {
   },
 }
 
-// ─── Category styles ──────────────────────────────────────────────────────────
 const categoryColors: Record<string, string> = {
   "Exam Strategy":  "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   "Subject Tips":   "bg-teal-500/10 text-teal-400 border-teal-500/20",
@@ -77,7 +74,6 @@ const categoryDot: Record<string, string> = {
   "News & Updates": "bg-blue-400",
 }
 
-// ─── Sidebar Article Card ─────────────────────────────────────────────────────
 const SidebarCard = ({ article }: { article: SidebarArticle }) => (
   <Link href={`/blog/${article.slug}`} className="group block">
     <div className="flex gap-4 py-4 border-b border-white/5 last:border-0 hover:bg-white/[0.02] rounded-xl px-3 -mx-3 transition-colors">
@@ -100,7 +96,6 @@ const SidebarCard = ({ article }: { article: SidebarArticle }) => (
   </Link>
 )
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 

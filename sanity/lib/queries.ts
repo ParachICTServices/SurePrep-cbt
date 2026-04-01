@@ -1,4 +1,3 @@
-// All published articles, newest first
 export const ALL_ARTICLES_QUERY = `
   *[_type == "article" && defined(publishedAt) && publishedAt <= now()] 
   | order(publishedAt desc) {
@@ -13,7 +12,6 @@ export const ALL_ARTICLES_QUERY = `
   }
 `
 
-// Single article by slug (for article detail page)
 export const ARTICLE_BY_SLUG_QUERY = `
   *[_type == "article" && slug.current == $slug][0] {
     _id,
@@ -28,7 +26,6 @@ export const ARTICLE_BY_SLUG_QUERY = `
   }
 `
 
-// Related articles — same category, excluding current
 export const RELATED_ARTICLES_QUERY = `
   *[_type == "article" && defined(publishedAt) && publishedAt <= now() && category == $category && slug.current != $slug]
   | order(publishedAt desc)[0..2] {
@@ -42,7 +39,6 @@ export const RELATED_ARTICLES_QUERY = `
   }
 `
 
-// Latest articles — excluding current
 export const LATEST_ARTICLES_QUERY = `
   *[_type == "article" && defined(publishedAt) && publishedAt <= now() && slug.current != $slug]
   | order(publishedAt desc)[0..4] {

@@ -59,7 +59,6 @@ class APIClient {
     }
   }
 
-  // HTTP Methods
   async get<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, { method: 'GET' });
   }

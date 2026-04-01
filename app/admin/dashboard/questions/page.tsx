@@ -40,7 +40,6 @@ interface Question {
 
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-// Animation variants (Preserved)
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.07 } }
@@ -96,7 +95,6 @@ export default function QuestionBank() {
     const fetchData = async () => {
       const token = localStorage.getItem('auth_token');
       try {
-        // Fetch Subjects
         const sRes = await fetch(`${API_BASE_URL}/subjects`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -193,13 +191,11 @@ const matchesSubject = filterSubject === "all" || q.subjectId === filterSubject;
     });
   };
 
-  // ✅ Save Edit via API
   const handleSaveEdit = async () => {
     if (!editingQuestion) return;
     setSaving(true);
     const token = localStorage.getItem('auth_token');
     try {
-      // Matches PATCH /questions/admin/{id}
       const response = await fetch(`${API_BASE_URL}/questions/admin/${editingQuestion.id}`, {
         method: 'PATCH',
         headers: { 
@@ -231,7 +227,6 @@ const matchesSubject = filterSubject === "all" || q.subjectId === filterSubject;
       if (!questionId) return;
       const token = localStorage.getItem('auth_token');
       try {
-        // Matches DELETE /questions/admin/{id}
         await fetch(`${API_BASE_URL}/questions/admin/${questionId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
@@ -245,13 +240,11 @@ const matchesSubject = filterSubject === "all" || q.subjectId === filterSubject;
     setConfirmDialog({ isOpen: false, questionId: null, isBulk: false });
   };
 
-  // ✅ Bulk Delete via API
   const handleBulkDelete = async () => {
     if (selectedQuestions.size === 0) return;
     setBulkDeleteLoading(true);
     const token = localStorage.getItem('auth_token');
     try {
-      // Matches POST /questions/admin/bulk-delete
       const response = await fetch(`${API_BASE_URL}/questions/admin/bulk-delete`, {
         method: 'POST',
         headers: { 
@@ -273,7 +266,6 @@ const matchesSubject = filterSubject === "all" || q.subjectId === filterSubject;
     }
   };
 
-  // --- UI RENDER (EXACTLY AS ORIGINAL) ---
 
   if (loading) {
     return (

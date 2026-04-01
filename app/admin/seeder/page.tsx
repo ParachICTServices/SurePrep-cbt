@@ -5,7 +5,6 @@ import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
-// ─── SUBJECT TOPICS (Preserved) ──────────────────────────────────────────────
 const SUBJECT_TOPICS: Record<string, string[]> = {
   mathematics: ['Numbers & Arithmetic', 'Ratio & Proportion', 'Indices, Logs & Surds', 'Sets', 'Algebraic Expressions', 'Factorization', 'Quadratic Equations', 'Simultaneous Equations', 'Graphs', 'Rational Expressions', 'Inequalities', 'Geometry', 'Trigonometry', 'Calculus', 'Statistics', 'Probability', 'Vectors'],
   physics: ['Measurement & Units', 'Motion', 'Equilibrium of Forces', 'Work, Energy & Power', 'Simple Machines', 'Elasticity', 'Hydrostatics', 'Temperature & Thermal Expansion', 'Heat & Vapours', 'Molecular Theory', 'Waves & Sound', 'Light (Reflection/Refraction)', 'Electrostatics', 'Current Electricity', 'Magnetism', 'Electromagnetism', 'Atomic Physics'],
@@ -19,8 +18,6 @@ const SUBJECT_TOPICS: Record<string, string[]> = {
   commerce: ['Occupation', 'Trade', 'Business Organization', 'Banking & Finance', 'Transportation', 'Communication', 'Insurance', 'Advertising', 'Marketing']
 };
 
-// ─── KEYWORD MAP (Preserved) ─────────────────────────────────────────────────
-// ... (I've kept the massive keyword map internally to process tagging)
 const TOPIC_KEYWORDS: Record<string, Record<string, string[]>> = {
   mathematics: {
     'quadratic-equations':      ['quadratic', 'x²', 'x^2', 'discriminant', 'completing the square'],
@@ -41,10 +38,8 @@ const TOPIC_KEYWORDS: Record<string, Record<string, string[]>> = {
     'probability':              ['probability', 'likely', 'chance', 'random', 'sample space', 'dice', 'coin', 'draw a ball'],
     'vectors':                  ['vector', 'magnitude', 'position vector', 'resultant'],
   },
-  // ... other subjects preserved from your file
 };
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 function assignTopics(subject: string, questionText: string, explanation: string = ""): string[] {
@@ -77,7 +72,6 @@ function toCSV(rows: Record<string, any>[]): string {
   return allKeys.map(escape).join(",") + "\n" + rows.map(r => allKeys.map(k => escape(r[k])).join(",")).join("\n");
 }
 
-// ─── COMPONENT ────────────────────────────────────────────────────────────────
 export default function TopicSeeder() {
   const [loading, setLoading] = useState(false);
   const [auditing, setAuditing] = useState(false);
@@ -96,7 +90,6 @@ export default function TopicSeeder() {
   const addLog = (msg: string) => setLogs(prev => [msg, ...prev]);
   const isBusy = loading || auditing || tagging || clearing || clearingAll || exporting;
 
-  // Generic Request Helper
   const apiRequest = async (path: string, method = 'GET', body?: any) => {
     const token = localStorage.getItem('auth_token');
     const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -111,12 +104,10 @@ export default function TopicSeeder() {
     return res.json();
   };
 
-  // ─── AUDIT (API Migrated) ───────────────────────────────────────────────────
   const auditTopics = async () => {
     setAuditing(true); setLogs([]);
     addLog(`🔍 Auditing questions for: ${selectedSubject}...`);
     try {
-      // Matches GET /questions/admin?subjectId=...
       const data: any = await apiRequest(`/questions/admin?subjectId=${selectedSubject}&limit=1000`);
       const questions = data.data || data.results || data;
       
@@ -136,7 +127,6 @@ export default function TopicSeeder() {
     } finally { setAuditing(false); }
   };
 
-  // ─── TAGGING LOGIC (Looping PATCH requests) ────────────────────────────────
   const processBatchTagging = async (subject: string, mode: 'clear-gen' | 'clear-all' | 'auto') => {
     setLogs([]);
     addLog(`🤖 Starting ${mode} for: ${subject}...`);
@@ -153,12 +143,12 @@ export default function TopicSeeder() {
         else if (mode === 'auto' && newTopics.length === 0) {
             newTopics = assignTopics(subject, q.questionText, q.explanation);
             if (newTopics.length === 0) newTopics = ['general'];
-        } else continue; // Skip if no change needed
+} else continue;
 
         await apiRequest(`/questions/admin/${q.id || q._id}`, 'PATCH', { topics: newTopics });
         count++;
         if (count % 10 === 0) addLog(`⏳ Processed ${count}/${questions.length}...`);
-        await sleep(100); // Be kind to API
+await sleep(100);
       }
       addLog(`✅ Successfully updated ${count} questions.`);
     } catch (e: any) {
@@ -166,7 +156,6 @@ export default function TopicSeeder() {
     }
   };
 
-  // ─── SYNC TOPICS TO SUBJECTS ───────────────────────────────────────────────
   const syncTopicsToSubjects = async () => {
     setLoading(true); setLogs([]);
     addLog("🚀 Syncing topic arrays to subjects collection...");
@@ -181,12 +170,10 @@ export default function TopicSeeder() {
     } finally { setLoading(false); }
   };
 
-  // ─── DATABASE EXPORT (API Migrated) ─────────────────────────────────────────
   const handleExport = async (isFull: boolean) => {
     setExporting(true); setLogs([]);
     addLog(isFull ? "🗄️  Starting FULL export..." : `📤 Exporting: ${exportCollectionName}`);
     
-    // Mapping internal names to your API routes
     const routeMap: Record<string, string> = {
       questions: '/questions/admin?limit=2000',
       subjects: '/subjects',
@@ -218,7 +205,6 @@ export default function TopicSeeder() {
     } finally { setExporting(false); }
   };
 
-  // ─── RENDER (UI preserved exactly as original) ───────────────────────────
   return (
     <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-2xl mx-auto space-y-6">

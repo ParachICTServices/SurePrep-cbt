@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Eye, EyeOff, Mail, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Loader2, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useAuth } from "@/app/context/AuthContext";
 
-// Get base URL from env
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 export default function Login() {
   const router = useRouter();
+const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,46 +24,27 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
 
-  // ✅ LOGIN WITH CUSTOM API
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Invalid email or password");
-      }
-
-      // Store the access token provided by your API
-      if (data.accessToken) {
-        localStorage.setItem("auth_token", data.accessToken);
-      }
-
+      await login(email, password);
       toast.success("Login successful! Welcome back.");
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Connection failed. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Connection failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ FORGOT PASSWORD WITH CUSTOM API
   const handlePasswordReset = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setResetLoading(true);
 
     try {
-      // Your API: POST /auth/forgot-password sends an OTP
       const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,11 +55,12 @@ export default function Login() {
         const data = await response.json();
         throw new Error(data.message || "Failed to send reset code");
       }
-      
+
       setResetEmailSent(true);
       toast.success("Reset code sent to your email!");
-    } catch (err: any) {
-      toast.error(err.message);
+      router.push(`/reset-password/verify-otp?email=${encodeURIComponent(resetEmail)}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send reset code"); 
     } finally {
       setResetLoading(false);
     }
@@ -104,19 +87,18 @@ export default function Login() {
       >
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-slate-900">
-            {showForgotPassword 
-              ? (resetEmailSent ? "Verify Reset" : "Forgot Password")
-              : "Welcome Back"
-            }
+            {showForgotPassword
+              ? resetEmailSent
+                ? "Verify Reset"
+                : "Forgot Password"
+              : "Welcome Back"}
           </h1>
           <p className="text-slate-500 text-sm mt-2">
-            {showForgotPassword 
-              ? (resetEmailSent 
-                  ? "Check your inbox for the security code" 
-                  : "Enter your email to receive a reset code"
-                )
-              : "Continue your CBT preparation 🚀"
-            }
+            {showForgotPassword
+              ? resetEmailSent
+                ? "Check your inbox for the security code"
+                : "Enter your email to receive a reset code"
+              : "Continue your CBT preparation 🚀"}
           </p>
         </div>
 
@@ -151,9 +133,9 @@ export default function Login() {
                 <div className="bg-slate-50 rounded-lg p-6 mb-6 border border-slate-200">
                   <p className="text-sm text-slate-700 mb-2 font-medium">Reset Code Sent to:</p>
                   <p className="font-bold text-slate-900 mb-6 break-all">{resetEmail}</p>
-                  
-                  <Link 
-                    href="/reset-password" // You should create a page for /auth/reset-password
+
+                  <Link
+                    href={`/reset-password/verify-otp?email=${encodeURIComponent(resetEmail)}`}
                     className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-100 mb-4"
                   >
                     Enter Reset Code
@@ -177,12 +159,20 @@ export default function Login() {
                 className="space-y-4"
               >
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Email Address
+                  </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <Mail
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      size={18}
+                    />
                     <input
-                      type="email" required disabled={resetLoading}
-                      value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
+                      type="email"
+                      required
+                      disabled={resetLoading}
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-slate-100"
                       placeholder="you@example.com"
                     />
@@ -191,13 +181,16 @@ export default function Login() {
 
                 <div className="flex gap-3 pt-2">
                   <button
-                    type="button" onClick={handleBackToLogin} disabled={resetLoading}
+                    type="button"
+                    onClick={handleBackToLogin}
+                    disabled={resetLoading}
                     className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition"
                   >
                     Cancel
                   </button>
                   <button
-                    type="submit" disabled={resetLoading}
+                    type="submit"
+                    disabled={resetLoading}
                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2"
                   >
                     {resetLoading ? <Loader2 className="animate-spin" size={18} /> : "Send Code"}
@@ -217,8 +210,11 @@ export default function Login() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
                 <input
-                  type="email" required disabled={loading}
-                  value={email} onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  required
+                  disabled={loading}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-slate-100"
                   placeholder="you@example.com"
                 />
@@ -228,7 +224,8 @@ export default function Login() {
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-medium text-slate-700">Password</label>
                   <button
-                    type="button" onClick={() => setShowForgotPassword(true)}
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
                     className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
                   >
                     Forgot password?
@@ -238,13 +235,16 @@ export default function Login() {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    required disabled={loading}
-                    value={password} onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none pr-12 disabled:bg-slate-100"
                     placeholder="••••••••"
                   />
                   <button
-                    type="button" onClick={() => setShowPassword(!showPassword)}
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -253,7 +253,8 @@ export default function Login() {
               </div>
 
               <button
-                disabled={loading} type="submit"
+                disabled={loading}
+                type="submit"
                 className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-semibold py-3 rounded-xl transition flex items-center justify-center gap-2 mt-6"
               >
                 {loading ? <Loader2 className="animate-spin" size={18} /> : "Login"}

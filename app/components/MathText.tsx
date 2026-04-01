@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 interface MathTextProps {
   text: string;
   className?: string;
-  block?: boolean; // true → render as display math (centered, larger)
+block?: boolean;
 }
 
 export function MathText({ text, className = "", block = false }: MathTextProps) {
@@ -14,19 +14,15 @@ export function MathText({ text, className = "", block = false }: MathTextProps)
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Dynamically import KaTeX so it only loads when needed
     import("katex").then((katex) => {
       if (!containerRef.current) return;
 
-      // Split on $...$ — captures both the delimiters and the content
       const parts = text.split(/(\$[^$]+\$)/g);
 
-      // Clear previous content
       containerRef.current.innerHTML = "";
 
       parts.forEach((part) => {
         if (part.startsWith("$") && part.endsWith("$") && part.length > 2) {
-          // Math segment — strip the $ delimiters and render
           const mathExpr = part.slice(1, -1);
           const span = document.createElement("span");
           span.className = "math-segment";
@@ -37,12 +33,10 @@ export function MathText({ text, className = "", block = false }: MathTextProps)
               output: "html",
             });
           } catch {
-            // Fallback: show raw expression if KaTeX chokes
             span.textContent = part;
           }
           containerRef.current!.appendChild(span);
         } else if (part) {
-          // Plain text segment
           containerRef.current!.appendChild(document.createTextNode(part));
         }
       });

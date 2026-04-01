@@ -1,7 +1,8 @@
 "use client";
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authService } from '@/app/lib/api/services/authService';
-import { User } from '@/app/type'; 
+import { User } from '@/app/type';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -25,7 +26,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const token = localStorage.getItem('auth_token');
       if (token) {
         try {
-          // Verify token and get fresh user data from /auth/me
           const currentUser = await authService.getCurrentUser();
           setUser(currentUser);
         } catch (error) {
@@ -43,21 +43,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     try {
       const response = await authService.login({ email, password });
-      // Ensure token is stored for the initAuth check on refresh
-      if (response.token) {
-        localStorage.setItem('auth_token', response.token);
-      }
-      setUser(response.user);
-    } catch (error) {
-      throw error; // Let the login page handle the error message
-    }
-  };
-
-  const register = async (data: any) => {
-    try {
-      const response = await authService.register(data);
-      if (response.token) {
-        localStorage.setItem('auth_token', response.token);
+      if (response.accessToken) {
+        localStorage.setItem('auth_token', response.accessToken);
       }
       setUser(response.user);
     } catch (error) {
@@ -65,18 +52,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-const logout = async () => {
-  try {
-    await authService.logout();
-  } catch (err) {
-    console.error("Logout error", err);
-  } finally {
-    // This is the most important part:
-    localStorage.removeItem('auth_token'); 
-    setUser(null);
-    router.push('/login');
-  }
-};
+  const register = async (data: any) => {
+    try {
+      const response = await authService.register(data);
+      if (response.accessToken) {
+        localStorage.setItem('auth_token', response.accessToken);
+      }
+      setUser(response.user);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error("Logout error", err);
+    } finally {
+      localStorage.removeItem('auth_token');
+      setUser(null);
+      router.push('/login');
+    }
+  };
 
   const refreshUser = async () => {
     try {

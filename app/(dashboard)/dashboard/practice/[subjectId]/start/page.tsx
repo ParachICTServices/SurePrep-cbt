@@ -5,7 +5,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { userService } from "@/app/lib/api/services/userService";
 import { Loader2, BookOpen, ShieldCheck, AlertCircle, ArrowLeft, Coins } from "lucide-react";
 import Link from "next/link";
-import toast from "react-hot-toast"; // ✅ Added missing import
+import toast from "react-hot-toast";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
@@ -48,11 +48,10 @@ export default function StartSubjectPracticePage() {
     }
   }, [subjectId, authLoading]);
 
-  // ✅ Restored as a proper handler function (was incorrectly floating in component body)
   const handleConfirmStart = async () => {
     if (!user) return;
 
-    setIsDeducting(true); // ✅ Was never set to true before the async call
+setIsDeducting(true);
 
     try {
       const token = localStorage.getItem("auth_token");
@@ -83,7 +82,7 @@ export default function StartSubjectPracticePage() {
       router.push(destination);
     } catch (error: any) {
       toast.error(error.message);
-      setIsDeducting(false); // ✅ Only reset on failure; on success we're navigating away
+setIsDeducting(false);
     }
   };
 

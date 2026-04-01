@@ -10,7 +10,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  // Protect the route: Redirect if not logged in
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
@@ -27,7 +26,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = async () => {
     try {
-      // ✅ Calls the custom API logout (clears token & state)
       await logout();
       router.push("/");
     } catch (error) {
@@ -89,7 +87,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 }
 
-// Helper Component (UI preserved)
 function NavItem({ href, icon, label }: { href: string; icon: any; label: string }) {
   return (
     <Link 

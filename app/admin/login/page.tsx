@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { Loader2, LockIcon } from "lucide-react";
 import { toast } from "sonner";
 
-// Get base URL from env
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
@@ -22,7 +21,6 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      // 1. Authenticate with custom backend
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -31,13 +29,11 @@ export default function AdminLogin() {
 
       const data = await response.json();
 
-     // Inside handleLogin after const data = await response.json();
 
 if (!response.ok) {
   throw new Error(data.message || "Invalid credentials");
 }
 
-// ✅ IMPORTANT: Check if your API returns 'token' or 'accessToken'
 const token = data.token || data.accessToken; 
 
 if (token) {
@@ -48,7 +44,6 @@ if (token) {
   toast.error("Auth failed: No token received from server");
 }
 
-      // 2. Authorization Check (Keep your existing email-based security)
       const userEmail = data.user?.email?.toLowerCase();
       
       if (userEmail && ADMIN_EMAILS.includes(userEmail)) {

@@ -6,7 +6,7 @@ import { Loader2, Timer, AlertTriangle, Calculator, X } from "lucide-react";
 import React from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { MathText } from "@/app/components/MathText"; // For proper formula rendering
+import { MathText } from "@/app/components/MathText";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
@@ -55,14 +55,12 @@ function MockExamContent() {
       
       try {
         await Promise.all(subList.map(async (subId) => {
-          // 1. Fetch Subject Name
           const subRes = await fetch(`${API_BASE_URL}/subjects/${subId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const subData = await subRes.json();
           namesMap[subId] = subData.name || subId;
 
-          // 2. Fetch Questions (Limit 40 per subject for JAMB Mock)
           const qRes = await fetch(`${API_BASE_URL}/questions?subjectId=${subId}&limit=40`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -129,7 +127,6 @@ function MockExamContent() {
     });
 
     try {
-      // ✅ Matches POST /test-results
       await fetch(`${API_BASE_URL}/test-results`, {
         method: 'POST',
         headers: { 
@@ -156,7 +153,6 @@ function MockExamContent() {
     }
   };
 
-  // Calculator Logic (Unchanged as requested)
   const handleCalcNumber = (num: string) => { if (calcNewNumber) { setCalcDisplay(num); setCalcNewNumber(false); } else { setCalcDisplay(calcDisplay === "0" ? num : calcDisplay + num); } };
   const handleCalcOperation = (op: string) => { const currentValue = parseFloat(calcDisplay); if (calcPrevValue !== null && calcOperation && !calcNewNumber) { const result = calculateResult(calcPrevValue, currentValue, calcOperation); setCalcDisplay(String(result)); setCalcPrevValue(result); } else { setCalcPrevValue(currentValue); } setCalcOperation(op); setCalcNewNumber(true); };
   const handleCalcEquals = () => { if (calcPrevValue !== null && calcOperation) { const currentValue = parseFloat(calcDisplay); const result = calculateResult(calcPrevValue, currentValue, calcOperation); setCalcDisplay(String(result)); setCalcPrevValue(null); setCalcOperation(null); setCalcNewNumber(true); } };

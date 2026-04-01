@@ -7,7 +7,6 @@ import Link from "next/link";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
-// Exact config from your original UI
 const EXAM_CONFIG = {
   jamb: { label: "JAMB / UTME", subtitle: "Select your 4 subject combination", icon: GraduationCap, duration: "2 Hours", subjectCount: 4, multiSubject: true, gradient: "from-slate-900 to-slate-800", accent: "bg-emerald-600", ringColor: "border-emerald-500 bg-emerald-50 text-emerald-900" },
   waec: { label: "WAEC / SSCE", subtitle: "Select 1 subject", icon: BookOpen, duration: "3 Hours", subjectCount: 1, multiSubject: false, gradient: "from-blue-900 to-blue-800", accent: "bg-sky-600", ringColor: "border-sky-500 bg-sky-50 text-sky-900" },

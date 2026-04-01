@@ -24,12 +24,10 @@ export interface QuestionHistory {
 }
 
 export const examService = {
-  // Submit test results
   async submitTestResult(data: Omit<TestResult, 'id'>): Promise<TestResult> {
     return apiClient.post<TestResult>('/exam/results', data);
   },
 
-  // Get user test results
   async getTestResults(filter?: { type?: string; limit?: number }): Promise<TestResult[]> {
     const params = new URLSearchParams();
     if (filter?.type) params.append('type', filter.type);
@@ -38,12 +36,10 @@ export const examService = {
     return apiClient.get<TestResult[]>(`/exam/results?${params.toString()}`);
   },
 
-  // Get single test result
   async getTestResult(id: string): Promise<TestResult> {
     return apiClient.get<TestResult>(`/exam/results/${id}`);
   },
 
-  // Get user statistics
   async getStatistics(): Promise<any> {
     return apiClient.get('/exam/statistics');
   },

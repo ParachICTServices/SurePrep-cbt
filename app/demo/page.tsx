@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle, Timer, XCircle, AlertCircle, Zap, ChevronRight, Lock } from "lucide-react";
 
-// 🌟 UPDATED: 6 Questions covering major JAMB subjects
 const demoQuestions = [
   {
     id: 1,
@@ -124,7 +123,6 @@ export default function DemoPage() {
       <div className="pt-32 pb-20 px-6 max-w-4xl mx-auto">
         
         {!started ? (
-          // 1. INTRO SCREEN
           <div className="text-center max-w-2xl mx-auto">
             <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Zap size={40} className="text-emerald-600" fill="currentColor" />

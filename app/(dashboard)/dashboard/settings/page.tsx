@@ -4,7 +4,6 @@ import { useAuth } from "@/app/context/AuthContext";
 import { GraduationCap, School, Briefcase, Save, CheckCircle, Loader2, Beaker, Palette, Calculator, Globe } from "lucide-react";
 import { toast } from "sonner";
 
-// API Base URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 const EXAM_CATEGORIES = [
@@ -112,7 +111,6 @@ export default function SettingsPage() {
         specialization: selectedCategory === 'senior' ? selectedSpecialization : 'general'
       };
 
-      // ✅ Matches PATCH /users/me
       const response = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PATCH',
         headers: {
@@ -126,10 +124,8 @@ export default function SettingsPage() {
         throw new Error("Failed to update settings");
       }
 
-      // Briefly wait for backend processing
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // ✅ Use refreshUser from your new AuthContext
       if (refreshUser) {
         await refreshUser();
       }
