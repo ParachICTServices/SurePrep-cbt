@@ -10,8 +10,8 @@ const CREDIT_PACKAGES = [
   {
     id: 'starter-basic',
     name: 'Basic Pack',
-    credits: 100,
-    price: 2000,
+    credits: 50,
+    price: 1000,
     bonus: 10,
     popular: true,
     icon: Zap,
@@ -21,8 +21,8 @@ const CREDIT_PACKAGES = [
   {
     id: 'starter-premium',
     name: 'Premium Pack',
-    credits: 250,
-    price: 5000,
+    credits: 100,
+    price: 2000,
     bonus: 50,
     popular: false,
     icon: Star,
@@ -32,13 +32,24 @@ const CREDIT_PACKAGES = [
   {
     id: 'ultimate',
     name: 'Ultimate Pack',
-    credits: 500,
-    price: 10000,
+    credits: 250,
+    price: 5000,
     bonus: 150,
     popular: false,
     icon: Crown,
     color: 'from-purple-600 to-purple-700',
     badge: 'bg-purple-500',
+  },
+  {
+    id: 'pro',
+    name: 'Pro Pack',
+    credits: 500, 
+    price: 10000,
+    bonus: 200,
+    popular: false,
+    icon: Zap,
+    color: 'from-amber-600 to-amber-700',
+    badge: 'bg-amber-500',
   }
 ];
 
