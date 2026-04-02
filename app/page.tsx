@@ -21,7 +21,7 @@ const staggerContainer = {
 };
 
 const Typewriter = () => {
-  const words = ["CBT FOR JAMB ", "WAEC", "NECO", "Post-UTME", "Any Exam"];
+  const words = ["CBT for JAMB ", "WAEC", "NECO", "Post-UTME", "Any Exam"];
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
