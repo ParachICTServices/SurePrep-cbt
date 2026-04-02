@@ -598,10 +598,7 @@ export default function LandingPage() {
             <div>
               <h4 className="font-bold text-slate-900 mb-6">Contact</h4>
               <ul className="space-y-4 text-sm text-slate-500">
-                <li className="flex items-start gap-3">
-                  <MapPin size={18} className="text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Sure Prep</span>
-                </li>
+                
                 <li className="flex items-center gap-3">
                   <Phone size={18} className="text-emerald-600 shrink-0" />
                   <span>+234 800 123 4567</span>
