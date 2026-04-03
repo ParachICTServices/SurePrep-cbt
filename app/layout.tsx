@@ -4,7 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "JAMB CBT Practice Made Easy - Sureprep",
+  title: "JAMB CBT Practice Made Easy - Sureprep CBT App",
   description: "JAMB CBT practice app with over 10,000 questions. Sureprep CBT app Works on mobile and desktop.",
 };
 
