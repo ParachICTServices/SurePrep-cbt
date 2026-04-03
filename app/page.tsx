@@ -570,7 +570,7 @@ export default function LandingPage() {
             <div className="col-span-1 md:col-span-1 space-y-4">
               <span className="text-2xl font-bold text-emerald-600 tracking-tight flex items-center gap-2"><ShieldCheck size={24}/> Sure Prep</span>
               <p className="text-slate-500 text-sm leading-relaxed">
-                Empowering Nigerian students to smash Computer based test or Exam with confidence. 
+                Empowering Nigerian students to smash their JAMB CBT practice and exams with confidence. We provide the ultimate CBT for JAMB platform to ensure you are exam-ready.
               </p>
               <div className="flex gap-4 pt-2">
                 <Link href="#" className="h-10 w-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all"><Twitter size={18} /></Link>
