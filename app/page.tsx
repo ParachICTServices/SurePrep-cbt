@@ -600,12 +600,8 @@ export default function LandingPage() {
               <ul className="space-y-4 text-sm text-slate-500">
                 
                 <li className="flex items-center gap-3">
-                  <Phone size={18} className="text-emerald-600 shrink-0" />
-                  <span>+234 800 123 4567</span>
-                </li>
-                <li className="flex items-center gap-3">
                   <Mail size={18} className="text-emerald-600 shrink-0" />
-                  <span>help@Sure Prep.ng</span>
+                  <span>sureprepcbt@gmail.com</span>
                 </li>
               </ul>
             </div>
