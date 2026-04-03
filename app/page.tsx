@@ -215,7 +215,7 @@ export default function LandingPage() {
               className="text-center mb-16"
             >
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Everything you need to score 300+</h2>
-              <p className="text-slate-500 mt-4 max-w-xl mx-auto">SurePrep is designed for students who want to pass JAMB in one attempt. Our platform combines technology and proven learning methods to deliver the best jamb cbt practice test experience.</p>
+              <p className="text-slate-500 mt-4 max-w-xl mx-auto">SurePrep CBT platform combines technology and proven learning methods to deliver the best JAMB CBT practice test experience.</p>
             </motion.div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -340,21 +340,21 @@ export default function LandingPage() {
                   step: "01",
                   icon: <BookOpen size={28} />,
                   title: "Pick your exam & subject",
-                  desc: "Choose JAMB, WAEC, NECO or Post-UTME. Then drill into the exact subject and topic giving you headaches. No noise, no guessing.",
+                  desc: "Start your JAMB CBT preparation by choosing your specific exam, whether it’s JAMB, WAEC, or NECO. Access our comprehensive database of JAMB CBT practice questions and answers to drill into the exact subjects and topics giving you headaches. No noise, no guessing.",
                   color: "from-emerald-500/20 to-transparent",
                 },
                 {
                   step: "02",
                   icon: <Clock size={28} />,
                   title: "Practice under real exam pressure",
-                  desc: "Our timer mirrors the exact pace of JAMB's CBT. You'll feel the pressure here first — not on exam day when it matters.",
+                  desc: "Our JAMB CBT online practice platform features a timer that mirrors the exact pace of a real CBT JAMB exam. By using this CBT for JAMB simulation, you’ll feel the pressure here first—ensuring you're fully prepared for the actual JAMB exam practice when it matters most.",
                   color: "from-teal-500/20 to-transparent",
                 },
                 {
                   step: "03",
                   icon: <TrendingUp size={28} />,
                   title: "Track what's working",
-                  desc: "Your dashboard shows the topics where you lose points. Fix those. Watch your score climb. It's not complicated — just consistent.",
+                  desc: "Use your dashboard to monitor your CBT JAMB practise sessions. It highlights the specific topics where you lose points, allowing you to fix those gaps and watch your score climb. Effective JAMB CBT practice isn't complicated—it's just about being consistent",
                   color: "from-cyan-500/20 to-transparent",
                 },
               ].map((item, i) => (
