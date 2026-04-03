@@ -4,8 +4,8 @@ import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "Sure Prep- JAMB CBT Practice",
-  description: "Master CBT with detailed solutions and analytics.",
+  title: "JAMB CBT Practice Made Easy - Sureprep",
+  description: "JAMB CBT practice app with over 10,000 questions. Sureprep CBT app Works on mobile and desktop.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
