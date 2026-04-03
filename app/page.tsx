@@ -215,7 +215,7 @@ export default function LandingPage() {
               className="text-center mb-16"
             >
               <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Everything you need to score 300+</h2>
-              <p className="text-slate-500 mt-4 max-w-xl mx-auto">We have packed every tool you need into one simple dashboard.</p>
+              <p className="text-slate-500 mt-4 max-w-xl mx-auto">SurePrep is designed for students who want to pass JAMB in one attempt. Our platform combines technology and proven learning methods to deliver the best jamb cbt practice test experience.</p>
             </motion.div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
