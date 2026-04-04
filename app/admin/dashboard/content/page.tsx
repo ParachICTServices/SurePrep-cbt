@@ -5,8 +5,6 @@ import { uploadToCloudinary } from "@/app/lib/imageUpload";
 import { PlusCircle, FileText, LayoutGrid, Loader2, Upload, FileUp, CheckCircle, AlertCircle, Beaker, Palette, Calculator, Globe, Image as ImageIcon, X, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { MathText } from "@/app/components/MathText"; 
-import { fullClean } from "@/app/lib/bulkTextCleaner";
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 const SUBJECT_TOPICS: Record<string, string[]> = {
@@ -54,8 +52,6 @@ function processMathInString(text: string): string {
 export default function ContentManager() {
   const { user } = useAuth();
 
-  const [showCleaned, setShowCleaned] = useState(false);
-  const [cleanedPreview, setCleanedPreview] = useState("");
   const [activeTab, setActiveTab] = useState<'subject' | 'question' | 'bulk'>('question');
   const [loading, setLoading] = useState(false);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -78,13 +74,10 @@ export default function ContentManager() {
   const [questionImagePreview, setQuestionImagePreview] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [bulkText, setBulkText] = useState("");
   const [bulkSubject, setBulkSubject] = useState("");
-  const [parsedQuestions, setParsedQuestions] = useState<any[]>([]);
-  const [bulkErrors, setBulkErrors] = useState<string[]>([]);
-  
-  const [bulkImages, setBulkImages] = useState<{[key: number]: File}>({});
-  const [bulkImagePreviews, setBulkImagePreviews] = useState<{[key: number]: string}>({});
+  const [bulkJsonFile, setBulkJsonFile] = useState<File | null>(null);
+  const [bulkJsonError, setBulkJsonError] = useState<string | null>(null);
+  const bulkJsonInputRef = useRef<HTMLInputElement>(null);
 
   const selectedSubjectData = subjects.find(sub => sub.id === selectedSubject);
   const availableTopics: string[] = selectedSubjectData?.topics?.length
@@ -143,26 +136,6 @@ export default function ContentManager() {
       reader.onloadend = () => setQuestionImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleBulkImageSelect = (questionIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { toast.error("Image must be less than 5MB"); return; }
-      setBulkImages(prev => ({...prev, [questionIndex]: file}));
-      const reader = new FileReader();
-      reader.onloadend = () => setBulkImagePreviews(prev => ({...prev, [questionIndex]: reader.result as string}));
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const removeBulkImage = (questionIndex: number) => {
-    const newImages = {...bulkImages};
-    const newPreviews = {...bulkImagePreviews};
-    delete newImages[questionIndex];
-    delete newPreviews[questionIndex];
-    setBulkImages(newImages);
-    setBulkImagePreviews(newPreviews);
   };
 
   const uploadImage = async (file: File): Promise<string> => {
@@ -251,150 +224,100 @@ export default function ContentManager() {
     }
   };
 
-  const handleParseBulk = () => {
-    setBulkErrors([]);
-    setParsedQuestions([]);
-    setShowCleaned(false);
-    setCleanedPreview("");
+  const handleBulkJsonFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setBulkJsonError(null);
+    setBulkJsonFile(null);
+    if (!file) return;
 
-    if (!bulkText.trim()) {
-      setBulkErrors(["Please paste your questions first."]);
+    if (!file.name.toLowerCase().endsWith(".json")) {
+      toast.error("Only .json files are accepted.");
+      e.target.value = "";
       return;
     }
 
-    const cleaned = fullClean(bulkText);
-    setCleanedPreview(cleaned);
-
-    const lines = cleaned.split("\n");
-    const questions: any[] = [];
-    const errors: string[] = [];
-
-    let currentQuestion: any = null;
-    let questionCount = 0;
-
-    for (let i = 0; i < lines.length; i++) {
-      const raw = lines[i];
-      const trimmed = raw.trim();
-      if (!trimmed) continue;
-      if (/^CHAPTER\s+\d+:/i.test(trimmed)) continue;
-
-      if (/^\d{1,3}[\).]\s*\S/.test(trimmed)) {
-        if (currentQuestion) {
-          const v = validateQuestion(currentQuestion, questionCount);
-          if (v.valid) questions.push(currentQuestion);
-          else errors.push(...v.errors);
-        }
-        questionCount++;
-        currentQuestion = {
-          questionText: trimmed.replace(/^\d{1,3}[\).]\s*/, "").trim(),
-          options: [],
-          correctOption: -1,
-          explanation: "",
-        };
-        continue;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        JSON.parse(reader.result as string);
+        setBulkJsonFile(file);
+      } catch {
+        setBulkJsonError("This file is not valid JSON. Fix the file and try again.");
+        e.target.value = "";
       }
-
-      if (/^[A-D][).]\s*.+/i.test(trimmed)) {
-        if (!currentQuestion) continue;
-        const optText = trimmed.replace(/^[A-D][).]\s*/i, "").trim();
-        currentQuestion.options.push(optText);
-        continue;
-      }
-
-      if (/^ANSWER\s*:\s*[A-D]/i.test(trimmed)) {
-        if (!currentQuestion) continue;
-        const letter = trimmed.match(/[A-D]/i)?.[0].toUpperCase();
-        currentQuestion.correctOption = letter ? letter.charCodeAt(0) - 65 : -1;
-        continue;
-      }
-
-      if (/^EXPLANATION\s*:\s*/i.test(trimmed)) {
-        if (!currentQuestion) continue;
-        currentQuestion.explanation = trimmed.replace(/^EXPLANATION\s*:\s*/i, "").trim();
-        continue;
-      }
-
-      if (currentQuestion) {
-        if (currentQuestion.correctOption === -1 && currentQuestion.options.length === 0) {
-          currentQuestion.questionText += " " + trimmed;
-        } else if (currentQuestion.correctOption !== -1) {
-          currentQuestion.explanation += " " + trimmed;
-        }
-      }
-    }
-
-    if (currentQuestion) {
-      const v = validateQuestion(currentQuestion, questionCount);
-      if (v.valid) questions.push(currentQuestion);
-      else errors.push(...v.errors);
-    }
-
-    setParsedQuestions(questions);
-    setBulkErrors(errors);
-    if (cleaned !== bulkText) setShowCleaned(true);
+    };
+    reader.onerror = () => {
+      setBulkJsonError("Could not read the file.");
+      e.target.value = "";
+    };
+    reader.readAsText(file);
   };
 
-  const validateQuestion = (q: any, lineNum: number) => {
-    const errors: string[] = [];
-    if (!q.questionText) errors.push(`Question ${lineNum}: Missing question text.`);
-    if (q.options.length !== 4) errors.push(`Question ${lineNum}: Must have 4 options.`);
-    if (q.correctOption === -1) errors.push(`Question ${lineNum}: Missing answer.`);
-    return { valid: errors.length === 0, errors };
+  const clearBulkJsonFile = () => {
+    setBulkJsonFile(null);
+    setBulkJsonError(null);
+    if (bulkJsonInputRef.current) bulkJsonInputRef.current.value = "";
   };
 
-  const handleBulkUpload = async () => {
-    if (parsedQuestions.length === 0) { toast.error("No valid questions to upload."); return; }
-    if (!bulkSubject) { toast.error("Please select a subject."); return; }
+  const handleJsonBulkUpload = async () => {
+    if (!bulkSubject) {
+      toast.error("Please select a subject.");
+      return;
+    }
+    if (!bulkJsonFile) {
+      toast.error("Choose a JSON file to upload.");
+      return;
+    }
+    if (bulkJsonError) return;
+    if (!API_BASE_URL) {
+      toast.error("API is not configured.");
+      return;
+    }
 
     setLoading(true);
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem("auth_token");
     try {
-      const imageCount = Object.keys(bulkImages).length;
-      if (imageCount > 0) toast.info(`Uploading ${imageCount} image(s)...`);
+      const formData = new FormData();
+      formData.append("file", bulkJsonFile);
+      formData.append("subjectId", bulkSubject);
 
-      const imageResults = await Promise.all(
-        parsedQuestions.map(async (_, idx) => {
-          if (bulkImages[idx]) {
-            try {
-              const url = await uploadImage(bulkImages[idx]);
-              return { index: idx, url };
-            } catch {
-              return { index: idx, url: null };
-            }
-          }
-          return { index: idx, url: null };
-        })
-      );
-
-      const imageURLs: {[key: number]: string | null} = {};
-      imageResults.forEach(r => { imageURLs[r.index] = r.url; });
-
-      const payload = parsedQuestions.map((q, idx) => ({
-        subjectId: bulkSubject,
-        questionText: q.questionText,
-        options: q.options,
-        correctOption: q.correctOption,
-        explanation: q.explanation || "",
-        imageURL: imageURLs[idx] || null,
-        difficulty: 'medium',
-        topics: []
-      }));
-
-      const response = await fetch(`${API_BASE_URL}/questions/admin/upload`, {
-          method: 'POST',
-          headers: { 
-              'Content-Type': 'application/json', 
-              'Authorization': `Bearer ${token}` 
-          },
-          body: JSON.stringify({ questions: payload })
+      const response = await fetch(`${API_BASE_URL}/admin/upload-file`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       });
 
-      if (!response.ok) throw new Error("Bulk upload failed");
+      const text = await response.text();
+      let data: Record<string, unknown> = {};
+      if (text) {
+        try {
+          data = JSON.parse(text) as Record<string, unknown>;
+        } catch {
+          if (!response.ok) throw new Error(text.slice(0, 200) || `Upload failed (${response.status})`);
+        }
+      }
+      if (!response.ok) {
+        const msg =
+          typeof data?.message === "string"
+            ? data.message
+            : `Upload failed (${response.status})`;
+        throw new Error(msg);
+      }
 
-      toast.success(`Success! ${parsedQuestions.length} questions uploaded.`);
-      setBulkText(""); setParsedQuestions([]); setBulkImages({}); setBulkImagePreviews({});
-    } catch (e: any) {
-      toast.error(e.message || "Error uploading questions");
+      const count =
+        typeof data?.count === "number"
+          ? data.count
+          : typeof data?.imported === "number"
+            ? data.imported
+            : null;
+      toast.success(
+        count != null ? `Uploaded successfully (${count} questions).` : "Upload completed successfully."
+      );
+      clearBulkJsonFile();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error uploading file");
     } finally {
       setLoading(false);
     }
@@ -552,74 +475,89 @@ export default function ContentManager() {
         )}
 
         {activeTab === "bulk" && (
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-2xl">
             <div>
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileUp className="text-emerald-600" /> Bulk Question Upload</h2>
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <FileUp className="text-emerald-600" /> Bulk question upload (JSON)
+              </h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Select a subject, then upload a single <code className="text-xs bg-slate-100 px-1 rounded">.json</code> file. The file is sent to the server for import.
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Select Subject</label>
-              <select className="w-full p-3 border border-slate-300 rounded-xl outline-none capitalize focus:ring-2 focus:ring-emerald-500" value={bulkSubject} onChange={(e) => {
-                const subjectId = e.target.value;
-                const subject = subjects.find((sub) => sub.id === subjectId);
-                setBulkSubject(subjectId);
-                setSelectedSubjectSlug(subject?.slug || '');
-              }}>
-                {subjects.map((sub) => <option key={sub.id} value={sub.id}>{sub.name} {sub.category && `(${sub.category})`}</option>)}
+              <label className="block text-sm font-medium text-slate-700 mb-2">Subject</label>
+              <select
+                className="w-full p-3 border border-slate-300 rounded-xl outline-none capitalize focus:ring-2 focus:ring-emerald-500"
+                value={bulkSubject}
+                onChange={(e) => {
+                  const subjectId = e.target.value;
+                  const subject = subjects.find((sub) => sub.id === subjectId);
+                  setBulkSubject(subjectId);
+                  setSelectedSubjectSlug(subject?.slug || "");
+                }}
+              >
+                {subjects.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    {sub.name} {sub.category && `(${sub.category})`}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Paste Questions</label>
-              <textarea rows={15} className="w-full p-4 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm" placeholder="Paste your questions here..." value={bulkText} onChange={(e) => { setBulkText(e.target.value); setShowCleaned(false); }}/>
-            </div>
-            <button onClick={handleParseBulk} className="w-full px-6 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition">Clean & Parse Questions</button>
-
-            {showCleaned && (
-              <details className="bg-amber-50 border border-amber-200 p-4 rounded-xl">
-                <summary className="text-sm font-bold text-amber-900 cursor-pointer">✨ Formatting cleaned. View result</summary>
-                <pre className="text-xs text-amber-800 font-mono bg-white p-3 rounded mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap">{cleanedPreview}</pre>
-              </details>
-            )}
-
-            {bulkErrors.length > 0 && (
-              <div className="bg-red-50 border border-red-200 p-4 rounded-xl">
-                <p className="text-sm font-bold text-red-900 flex items-center gap-2"><AlertCircle size={16} />{bulkErrors.length} Error(s) Found:</p>
-                <ul className="text-sm text-red-800 space-y-1 mt-2">{bulkErrors.map((err, idx) => (<li key={idx}>• {err}</li>))}</ul>
-              </div>
-            )}
-
-            {parsedQuestions.length > 0 && (
-              <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
-                <p className="text-sm font-bold text-emerald-900 mb-3 flex items-center gap-2"><CheckCircle size={16} />{parsedQuestions.length} Questions Ready</p>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {parsedQuestions.map((q, idx) => (
-                    <div key={idx} className="bg-white p-4 rounded-lg border border-emerald-200">
-                      <div className="flex items-start justify-between mb-2">
-                        <p className="font-bold text-slate-900 flex-1">{idx + 1}. {q.questionText}</p>
-                        <div className="ml-4">
-                          <input type="file" accept="image/*" onChange={(e) => handleBulkImageSelect(idx, e)} className="hidden" id={`bulk-image-${idx}`} />
-                          <label htmlFor={`bulk-image-${idx}`} className="cursor-pointer px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition flex items-center gap-1"><ImageIcon size={14} />{bulkImages[idx] ? "Change" : "Add"} Image</label>
-                        </div>
-                      </div>
-                      {bulkImagePreviews[idx] && (
-                        <div className="mb-3 relative inline-block">
-                          <img src={bulkImagePreviews[idx]} alt="Preview" className="w-40 h-40 object-cover rounded-lg border-2 border-blue-200" />
-                          <button type="button" onClick={() => removeBulkImage(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-2">
-                        {q.options.map((opt: string, optIdx: number) => (
-                          <p key={optIdx} className={`text-sm p-2 rounded ${optIdx === q.correctOption ? "bg-emerald-100 text-emerald-900 font-bold" : "text-slate-600"}`}>{String.fromCharCode(65 + optIdx)}) {opt}</p>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={handleBulkUpload} disabled={loading} className="w-full px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition mt-4 flex items-center justify-center gap-2">
-                  {loading ? <Loader2 className="animate-spin" /> : <Upload size={20} />}
-                  Upload {parsedQuestions.length} Questions
+              <label className="block text-sm font-medium text-slate-700 mb-2">JSON file</label>
+              <input
+                ref={bulkJsonInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={handleBulkJsonFileChange}
+              />
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => bulkJsonInputRef.current?.click()}
+                  className="px-6 py-3 border-2 border-dashed border-slate-300 rounded-xl hover:border-emerald-500 transition flex items-center justify-center gap-2 text-slate-600 hover:text-emerald-700 font-medium"
+                >
+                  <FileUp size={20} />
+                  {bulkJsonFile ? "Change file" : "Choose JSON file"}
                 </button>
+                {bulkJsonFile && (
+                  <div className="flex items-center gap-2 text-sm text-slate-700">
+                    <span className="font-mono truncate max-w-[220px]" title={bulkJsonFile.name}>
+                      {bulkJsonFile.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearBulkJsonFile}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
+                      aria-label="Remove file"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
+              {bulkJsonError && (
+                <div className="mt-3 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">
+                  <AlertCircle className="shrink-0 mt-0.5" size={18} />
+                  <span>{bulkJsonError}</span>
+                </div>
+              )}
+              {bulkJsonFile && !bulkJsonError && (
+                <p className="mt-2 text-xs text-emerald-700 flex items-center gap-1">
+                  <CheckCircle size={14} /> Valid JSON — ready to upload.
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleJsonBulkUpload}
+              disabled={loading || !bulkJsonFile || !!bulkJsonError || !bulkSubject}
+              className="w-full px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : <Upload size={20} />}
+              {loading ? "Uploading…" : "Upload to subject"}
+            </button>
           </div>
         )}
       </div>
