@@ -6,8 +6,20 @@ import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import {
   Loader2, Edit2, Trash2, X, Save, LayoutGrid, AlertTriangle, Palette, Plus,
 } from "lucide-react";
+import {
+  DEFAULT_SUBJECT_HEX,
+  normalizeSubjectHex,
+  subjectColorToCss,
+  subjectSwatchProps,
+  topicsToApiPayload,
+  type TopicRow,
+} from "@/app/lib/subjectColor";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com/api"
+).replace(/\/$/, "");
+
+const defaultTopicRow = (): TopicRow => ({ id: "", name: "", cost: "500" });
 
 interface Subject {
   id: string;
@@ -21,20 +33,21 @@ interface Subject {
 type SubjectCategory = "sciences" | "arts" | "commercial" | "general";
 
 export default function SubjectsManager() {
-  const { user, loading: authLoading } = useAuth();
+  const { loading: authLoading } = useAuth();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-  const [editForm, setEditForm] = useState({ name: "", color: "" });
+  const [editForm, setEditForm] = useState({ name: "", colorHex: DEFAULT_SUBJECT_HEX });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [addForm, setAddForm] = useState({
     name: "",
-    color: "bg-blue-100 text-blue-600",
+    colorHex: DEFAULT_SUBJECT_HEX,
     category: "general" as SubjectCategory,
+    topics: [defaultTopicRow()],
   });
   const [creating, setCreating] = useState(false);
 
@@ -46,19 +59,6 @@ export default function SubjectsManager() {
     subjectName: string;
     questionCount: number;
   }>({ isOpen: false, subjectId: null, subjectName: "", questionCount: 0 });
-
-  const colorOptions = [
-    { value: "bg-blue-100 text-blue-600",     label: "Blue",   preview: "bg-blue-100" },
-    { value: "bg-emerald-100 text-emerald-600", label: "Green", preview: "bg-emerald-100" },
-    { value: "bg-orange-100 text-orange-600", label: "Orange", preview: "bg-orange-100" },
-    { value: "bg-purple-100 text-purple-600", label: "Purple", preview: "bg-purple-100" },
-    { value: "bg-pink-100 text-pink-600",     label: "Pink",   preview: "bg-pink-100" },
-    { value: "bg-red-100 text-red-600",       label: "Red",    preview: "bg-red-100" },
-    { value: "bg-yellow-100 text-yellow-600", label: "Yellow", preview: "bg-yellow-100" },
-    { value: "bg-indigo-100 text-indigo-600", label: "Indigo", preview: "bg-indigo-100" },
-    { value: "bg-teal-100 text-teal-600",     label: "Teal",   preview: "bg-teal-100" },
-    { value: "bg-slate-100 text-slate-600",   label: "Gray",   preview: "bg-slate-100" },
-  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,7 +124,11 @@ export default function SubjectsManager() {
 
   const handleEdit = (subject: Subject) => {
     setEditingSubject(subject);
-    setEditForm({ name: subject.name, color: subject.color });
+    const c = subject.color?.trim() || "";
+    setEditForm({
+      name: subject.name,
+      colorHex: c.startsWith("#") ? c : subjectColorToCss(subject.color),
+    });
   };
 
   const handleCreateSubject = async () => {
@@ -132,34 +136,46 @@ export default function SubjectsManager() {
       toast.error("Subject name is required");
       return;
     }
-    if (!API_BASE_URL) {
-      toast.error("API is not configured");
+    const topicsPayload = topicsToApiPayload(addForm.topics);
+    if (topicsPayload.length === 0) {
+      toast.error("Add at least one topic with a name.");
+      return;
+    }
+    const token = localStorage.getItem("auth_token");
+    if (!token) {
+      toast.error("You are not signed in. Please open the admin login again.");
       return;
     }
     setCreating(true);
-    const token = localStorage.getItem("auth_token");
     try {
+      const color = normalizeSubjectHex(addForm.colorHex);
       const response = await fetch(`${API_BASE_URL}/subjects/admin`, {
         method: "POST",
         headers: {
+          Accept: "application/json",
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: addForm.name.trim(),
-          color: addForm.color,
+          color,
           category: addForm.category,
+          topics: topicsPayload,
         }),
       });
-      if (!response.ok) throw new Error("Create failed");
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(typeof err?.message === "string" ? err.message : "Create failed");
+      }
       const raw = await response.json();
       const newSub = raw?.data ?? raw;
       const id = newSub.id || newSub._id;
       if (!id) throw new Error("Invalid response");
+      const createdColor = typeof newSub.color === "string" ? newSub.color : color;
       const created: Subject = {
         id,
         name: addForm.name.trim(),
-        color: addForm.color,
+        color: createdColor,
         category: addForm.category,
         questionCount: 0,
       };
@@ -167,10 +183,15 @@ export default function SubjectsManager() {
       setQuestionCounts((prev) => ({ ...prev, [id]: 0 }));
       toast.success(`Subject "${created.name}" created`);
       setShowAddModal(false);
-      setAddForm({ name: "", color: "bg-blue-100 text-blue-600", category: "general" });
+      setAddForm({
+        name: "",
+        colorHex: DEFAULT_SUBJECT_HEX,
+        category: "general",
+        topics: [defaultTopicRow()],
+      });
     } catch (error) {
       console.error("Error creating subject:", error);
-      toast.error("Failed to create subject");
+      toast.error(error instanceof Error ? error.message : "Failed to create subject");
     } finally {
       setCreating(false);
     }
@@ -188,16 +209,17 @@ export default function SubjectsManager() {
             'Authorization': `Bearer ${token}` 
         },
         body: JSON.stringify({
-          name: editForm.name,
-          color: editForm.color,
+          name: editForm.name.trim(),
+          color: normalizeSubjectHex(editForm.colorHex),
         })
       });
 
       if (!response.ok) throw new Error("Update failed");
 
+      const nextColor = normalizeSubjectHex(editForm.colorHex);
       setSubjects(prev =>
         prev.map(s =>
-          s.id === editingSubject.id ? { ...s, name: editForm.name, color: editForm.color } : s
+          s.id === editingSubject.id ? { ...s, name: editForm.name.trim(), color: nextColor } : s
         )
       );
       toast.success("Subject updated successfully!");
@@ -307,7 +329,7 @@ export default function SubjectsManager() {
               className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-xl ${subject.color}`}>
+                <div {...subjectSwatchProps(subject.color)}>
                   <LayoutGrid size={24} />
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -330,7 +352,7 @@ export default function SubjectsManager() {
       {/* Add Subject Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-8 border border-slate-200 dark:border-slate-700 shadow-xl">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 border border-slate-200 dark:border-slate-700 shadow-xl">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Add subject</h2>
               <button
@@ -369,22 +391,113 @@ export default function SubjectsManager() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
-                  <Palette size={16} /> Color theme
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+                  <Palette size={16} /> Color (hex)
                 </label>
-                <div className="grid grid-cols-5 gap-3">
-                  {colorOptions.map((colorOption) => (
-                    <button
-                      key={colorOption.value}
-                      type="button"
-                      onClick={() => setAddForm((f) => ({ ...f, color: colorOption.value }))}
-                      className={`h-12 rounded-xl border-2 transition-all ${
-                        addForm.color === colorOption.value
-                          ? "border-slate-900 dark:border-white ring-2 ring-slate-900 dark:ring-white ring-offset-2 dark:ring-offset-slate-900"
-                          : "border-slate-200 dark:border-slate-600 hover:border-slate-300"
-                      } ${colorOption.preview}`}
-                      title={colorOption.label}
-                    />
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="color"
+                    value={normalizeSubjectHex(addForm.colorHex)}
+                    onChange={(e) => setAddForm((f) => ({ ...f, colorHex: e.target.value }))}
+                    className="h-12 w-14 cursor-pointer rounded-lg border border-slate-300 dark:border-slate-600 p-1 bg-slate-50 dark:bg-slate-900"
+                    aria-label="Subject color"
+                  />
+                  <input
+                    type="text"
+                    value={addForm.colorHex}
+                    onChange={(e) => {
+                      let v = e.target.value.trim();
+                      if (v && !v.startsWith("#")) v = `#${v}`;
+                      setAddForm((f) => ({ ...f, colorHex: v }));
+                    }}
+                    className="flex-1 min-w-[8rem] p-3 border border-slate-300 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                    placeholder="#6366f1"
+                    spellCheck={false}
+                    maxLength={7}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Topics <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setAddForm((f) => ({ ...f, topics: [...f.topics, { id: "", name: "", cost: "0" }] }))
+                    }
+                    className="text-sm font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+                  >
+                    <Plus size={16} /> Add topic
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                  Each topic needs a name and cost. Topic ID is optional (UUID).
+                </p>
+                <div className="space-y-3">
+                  {addForm.topics.map((row, idx) => (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/50"
+                    >
+                      <div className="md:col-span-4">
+                        <label className="text-xs text-slate-500 mb-1 block">Name</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                          placeholder="Algebra"
+                          value={row.name}
+                          onChange={(e) => {
+                            const next = [...addForm.topics];
+                            next[idx] = { ...next[idx], name: e.target.value };
+                            setAddForm((f) => ({ ...f, topics: next }));
+                          }}
+                        />
+                      </div>
+                      <div className="md:col-span-3">
+                        <label className="text-xs text-slate-500 mb-1 block">Cost</label>
+                        <input
+                          type="number"
+                          min={0}
+                          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                          value={row.cost}
+                          onChange={(e) => {
+                            const next = [...addForm.topics];
+                            next[idx] = { ...next[idx], cost: e.target.value };
+                            setAddForm((f) => ({ ...f, topics: next }));
+                          }}
+                        />
+                      </div>
+                      <div className="md:col-span-4">
+                        <label className="text-xs text-slate-500 mb-1 block">Topic ID (optional)</label>
+                        <input
+                          type="text"
+                          className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-mono bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                          placeholder="UUID"
+                          value={row.id}
+                          onChange={(e) => {
+                            const next = [...addForm.topics];
+                            next[idx] = { ...next[idx], id: e.target.value };
+                            setAddForm((f) => ({ ...f, topics: next }));
+                          }}
+                        />
+                      </div>
+                      <div className="md:col-span-1 flex justify-end pb-1">
+                        <button
+                          type="button"
+                          disabled={addForm.topics.length <= 1}
+                          onClick={() =>
+                            setAddForm((f) => ({ ...f, topics: f.topics.filter((_, i) => i !== idx) }))
+                          }
+                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg disabled:opacity-30 disabled:pointer-events-none"
+                          title="Remove topic"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -400,7 +513,11 @@ export default function SubjectsManager() {
                 <button
                   type="button"
                   onClick={handleCreateSubject}
-                  disabled={creating || !addForm.name.trim()}
+                  disabled={
+                    creating ||
+                    !addForm.name.trim() ||
+                    topicsToApiPayload(addForm.topics).length === 0
+                  }
                   className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {creating ? <Loader2 className="animate-spin" size={20} /> : <Plus size={20} />}
@@ -441,11 +558,30 @@ export default function SubjectsManager() {
                 <input type="text" className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-3 flex items-center gap-2"><Palette size={16} /> Color Theme</label>
-                <div className="grid grid-cols-5 gap-3">
-                  {colorOptions.map((colorOption) => (
-                    <button key={colorOption.value} type="button" onClick={() => setEditForm({ ...editForm, color: colorOption.value })} className={`h-12 rounded-xl border-2 transition-all ${editForm.color === colorOption.value ? "border-slate-900 ring-2 ring-slate-900 ring-offset-2" : "border-slate-200 hover:border-slate-300"} ${colorOption.preview}`} title={colorOption.label} />
-                  ))}
+                <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
+                  <Palette size={16} /> Color (hex)
+                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="color"
+                    value={normalizeSubjectHex(editForm.colorHex)}
+                    onChange={(e) => setEditForm((f) => ({ ...f, colorHex: e.target.value }))}
+                    className="h-12 w-14 cursor-pointer rounded-lg border border-slate-300 p-1 bg-slate-50"
+                    aria-label="Subject color"
+                  />
+                  <input
+                    type="text"
+                    value={editForm.colorHex}
+                    onChange={(e) => {
+                      let v = e.target.value.trim();
+                      if (v && !v.startsWith("#")) v = `#${v}`;
+                      setEditForm((f) => ({ ...f, colorHex: v }));
+                    }}
+                    className="flex-1 min-w-[8rem] p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+                    placeholder="#6366f1"
+                    spellCheck={false}
+                    maxLength={7}
+                  />
                 </div>
               </div>
 
