@@ -6,16 +6,20 @@ export interface LoginCredentials {
   password: string;
 }
 
+function normalizeAuthResponse(raw: AuthResponse): AuthResponse {
+  const accessToken = raw.accessToken ?? raw.token ?? '';
+  return { ...raw, accessToken, user: raw.user };
+}
+
 export const authService = {
   async register(data: any): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/register', data);
-    return response;
+    return normalizeAuthResponse(response);
   },
 
-  // Login
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-    return response;
+    return normalizeAuthResponse(response);
   },
 
   async logout(): Promise<void> {

@@ -27,15 +27,23 @@ class APIClient {
     }
   }
 
+  private getBearerToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('auth_token');
+    }
+    return this.token;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+    const bearer = this.getBearerToken();
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      ...(this.token && { 'Authorization': `Bearer ${this.token}` }),
+      ...(bearer && { Authorization: `Bearer ${bearer}` }),
       ...options.headers,
     };
 

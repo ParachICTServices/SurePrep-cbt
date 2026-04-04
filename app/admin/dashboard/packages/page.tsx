@@ -57,22 +57,22 @@ export default function PackagesPage() {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 text-slate-900 dark:text-slate-100">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Package Management</h1>
-          <p className="text-slate-400 mt-1">Manage credit packages for students</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Package Management</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">Manage credit packages for students</p>
         </div>
         <Link
           href="/admin/dashboard/packages/create"
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm"
         >
           <Plus className="h-4 w-4" />
           Create Package
@@ -80,10 +80,10 @@ export default function PackagesPage() {
       </div>
 
       {packages.length === 0 ? (
-        <div className="bg-slate-800 rounded-xl p-8 text-center">
-          <PackageIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-white mb-2">No packages found</h3>
-          <p className="text-slate-400 mb-4">Get started by creating your first credit package</p>
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-8 text-center shadow-sm">
+          <PackageIcon className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No packages found</h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Get started by creating your first credit package</p>
           <Link
             href="/admin/dashboard/packages/create"
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg inline-flex items-center gap-2 transition-colors"
@@ -95,34 +95,37 @@ export default function PackagesPage() {
       ) : (
         <div className="grid gap-4">
           {packages.map((pkg) => (
-            <div key={pkg.id} className="bg-slate-800 rounded-xl p-6">
+            <div
+              key={pkg.id}
+              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm"
+            >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <PackageIcon className="h-5 w-5 text-emerald-400" />
-                    <h3 className="text-lg font-semibold text-white">{pkg.name}</h3>
-                    <span className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-sm font-mono">
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <PackageIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{pkg.name}</h3>
+                    <span className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded text-sm font-mono">
                       {pkg.id}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div>
-                      <p className="text-slate-400 text-sm">Credits</p>
-                      <p className="text-white font-semibold">{pkg.credits.toLocaleString()}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Credits</p>
+                      <p className="text-slate-900 dark:text-white font-semibold">{pkg.credits.toLocaleString()}</p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Bonus Credits</p>
-                      <p className="text-white font-semibold">
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Bonus Credits</p>
+                      <p className="text-slate-900 dark:text-white font-semibold">
                         {pkg.bonus > 0 ? `+${pkg.bonus.toLocaleString()}` : 'None'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-slate-400 text-sm">Price</p>
-                      <p className="text-white font-semibold">{formatPrice(pkg.price)}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Price</p>
+                      <p className="text-slate-900 dark:text-white font-semibold">{formatPrice(pkg.price)}</p>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 ml-4">
+                <div className="flex items-center gap-2 ml-4 shrink-0">
                   <Link
                     href={`/admin/dashboard/packages/${pkg.id}/edit`}
                     className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
@@ -131,13 +134,14 @@ export default function PackagesPage() {
                     <Edit className="h-4 w-4" />
                   </Link>
                   <button
+                    type="button"
                     onClick={() => handleDelete(pkg.id)}
                     disabled={deleting === pkg.id}
-                    className="bg-red-600 hover:bg-red-700 disabled:bg-red-800 text-white p-2 rounded-lg transition-colors"
+                    className="bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white p-2 rounded-lg transition-colors"
                     title="Delete package"
                   >
                     {deleting === pkg.id ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                     ) : (
                       <Trash2 className="h-4 w-4" />
                     )}

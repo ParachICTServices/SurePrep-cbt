@@ -2,6 +2,8 @@ export interface User {
 id: string;
   email: string;
   displayName: string | null;
+  /** Server-assigned role; admins must have role `admin` (case-insensitive). */
+  role?: string;
   examCategory: 'senior' | 'junior' | 'professional';
   specialization: 'sciences' | 'arts' | 'commercial' | 'general';
   credits: number; 
@@ -23,7 +25,9 @@ subjectId: string;
 }
 
 export interface AuthResponse {
-  accessToken: string;
+  accessToken?: string;
+  /** Some API versions return `token` instead of `accessToken`. */
+  token?: string;
   user: User;
 }
 

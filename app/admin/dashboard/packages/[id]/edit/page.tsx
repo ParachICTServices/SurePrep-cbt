@@ -7,11 +7,16 @@ import { toast } from 'sonner';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
+const inputClass =
+  'w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-4 py-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent';
+
+const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2';
+
 export default function EditPackagePage() {
   const router = useRouter();
   const params = useParams();
   const packageId = params.id as string;
-  
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [originalPackage, setOriginalPackage] = useState<Package | null>(null);
@@ -48,17 +53,17 @@ export default function EditPackagePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name?.trim()) {
       toast.error('Package name is required');
       return;
     }
-    
+
     if (!formData.credits || formData.credits <= 0) {
       toast.error('Credits must be greater than 0');
       return;
     }
-    
+
     if (!formData.price || formData.price <= 0) {
       toast.error('Price must be greater than 0');
       return;
@@ -69,19 +74,18 @@ export default function EditPackagePage() {
       await packageService.updatePackage(packageId, formData);
       toast.success('Package updated successfully');
       router.push('/admin/dashboard/packages');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating package:', error);
-      const message = error?.response?.data?.message || error?.message || 'Failed to update package';
-      toast.error(message);
+      toast.error(error instanceof Error ? error.message : 'Failed to update package');
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (field: keyof UpdatePackageRequest, value: string | number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -106,7 +110,7 @@ export default function EditPackagePage() {
     return (
       <div className="p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500" />
         </div>
       </div>
     );
@@ -114,12 +118,12 @@ export default function EditPackagePage() {
 
   if (!originalPackage) {
     return (
-      <div className="p-6">
+      <div className="p-6 text-slate-900 dark:text-slate-100">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Package Not Found</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Package Not Found</h1>
           <Link
             href="/admin/dashboard/packages"
-            className="text-emerald-400 hover:text-emerald-300"
+            className="text-emerald-600 dark:text-emerald-400 hover:underline"
           >
             Return to Packages
           </Link>
@@ -129,25 +133,29 @@ export default function EditPackagePage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 text-slate-900 dark:text-slate-100">
       <div className="mb-6">
         <Link
           href="/admin/dashboard/packages"
-          className="text-slate-400 hover:text-white flex items-center gap-2 mb-4 transition-colors"
+          className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-2 mb-4 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Packages
         </Link>
-        <h1 className="text-2xl font-bold text-white">Edit Package</h1>
-        <p className="text-slate-400 mt-1">
-          Editing package: <span className="font-mono text-slate-300">{originalPackage.id}</span>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Edit Package</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">
+          Editing package:{' '}
+          <span className="font-mono text-slate-700 dark:text-slate-300">{originalPackage.id}</span>
         </p>
       </div>
 
       <div className="max-w-2xl">
-        <form onSubmit={handleSubmit} className="bg-slate-800 rounded-xl p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 space-y-6 shadow-sm"
+        >
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
+            <label htmlFor="name" className={labelClass}>
               Package Name *
             </label>
             <input
@@ -156,78 +164,84 @@ export default function EditPackagePage() {
               value={formData.name || ''}
               onChange={(e) => handleChange('name', e.target.value)}
               placeholder="e.g., Starter Pack, Premium Bundle"
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className={inputClass}
               required
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="credits" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="credits" className={labelClass}>
                 Credits *
               </label>
               <input
                 type="number"
                 id="credits"
                 value={formData.credits || ''}
-                onChange={(e) => handleChange('credits', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleChange('credits', parseInt(e.target.value, 10) || 0)}
                 placeholder="50"
-                min="1"
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                min={1}
+                className={inputClass}
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="bonus" className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="bonus" className={labelClass}>
                 Bonus Credits
               </label>
               <input
                 type="number"
                 id="bonus"
                 value={formData.bonus || ''}
-                onChange={(e) => handleChange('bonus', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleChange('bonus', parseInt(e.target.value, 10) || 0)}
                 placeholder="0"
-                min="0"
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                min={0}
+                className={inputClass}
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-slate-300 mb-2">
+            <label htmlFor="price" className={labelClass}>
               Price (₦) *
             </label>
             <input
               type="number"
               id="price"
               value={formData.price || ''}
-              onChange={(e) => handleChange('price', parseInt(e.target.value) || 0)}
+              onChange={(e) => handleChange('price', parseInt(e.target.value, 10) || 0)}
               placeholder="10"
-              min="1"
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              min={1}
+              className={inputClass}
               required
             />
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
               Enter price in Naira (e.g., 10 for ₦10)
             </p>
           </div>
 
           {formData.credits && formData.credits > 0 && (
-            <div className="bg-slate-700 rounded-lg p-4">
-              <h3 className="text-white font-medium mb-2">Package Preview</h3>
+            <div className="bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-600 p-4">
+              <h3 className="text-slate-900 dark:text-white font-medium mb-2">Package Preview</h3>
               <div className="space-y-1 text-sm">
-                <p className="text-slate-300">
-                  <span className="text-slate-400">Name:</span> {formData.name || 'Package Name'}
+                <p className="text-slate-700 dark:text-slate-300">
+                  <span className="text-slate-500 dark:text-slate-400">Name:</span>{' '}
+                  {formData.name || 'Package Name'}
                 </p>
-                <p className="text-slate-300">
-                  <span className="text-slate-400">Total Credits:</span> {(formData.credits || 0) + (formData.bonus || 0)} 
+                <p className="text-slate-700 dark:text-slate-300">
+                  <span className="text-slate-500 dark:text-slate-400">Total Credits:</span>{' '}
+                  {(formData.credits || 0) + (formData.bonus || 0)}
                   {formData.bonus && formData.bonus > 0 && (
-                    <span className="text-emerald-400"> ({formData.credits} + {formData.bonus} bonus)</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">
+                      {' '}
+                      ({formData.credits} + {formData.bonus} bonus)
+                    </span>
                   )}
                 </p>
-                <p className="text-slate-300">
-                  <span className="text-slate-400">Price:</span> {formData.price && formData.price > 0 ? formatPrice(formData.price) : 'N/A'}
+                <p className="text-slate-700 dark:text-slate-300">
+                  <span className="text-slate-500 dark:text-slate-400">Price:</span>{' '}
+                  {formData.price && formData.price > 0 ? formatPrice(formData.price) : 'N/A'}
                 </p>
               </div>
             </div>
@@ -237,10 +251,10 @@ export default function EditPackagePage() {
             <button
               type="submit"
               disabled={loading || !hasChanges()}
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-800 disabled:opacity-50 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
               ) : (
                 <Save className="h-4 w-4" />
               )}
@@ -248,15 +262,13 @@ export default function EditPackagePage() {
             </button>
             <Link
               href="/admin/dashboard/packages"
-              className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-lg transition-colors"
+              className="bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white px-6 py-2 rounded-lg transition-colors inline-flex items-center"
             >
               Cancel
             </Link>
           </div>
 
-          {!hasChanges() && (
-            <p className="text-slate-400 text-sm">No changes detected</p>
-          )}
+          {!hasChanges() && <p className="text-slate-500 dark:text-slate-400 text-sm">No changes detected</p>}
         </form>
       </div>
     </div>

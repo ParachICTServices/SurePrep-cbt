@@ -121,10 +121,9 @@ export default function BuyCreditsPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-slate-900 mb-3">Purchase Credits</h1>
-        <p className="text-slate-600 max-w-2xl mx-auto">
+        <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-3">Purchase Credits</h1>
+        <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
           Credits are used to unlock practice sessions and mock exams.
         </p>
       </div>
@@ -155,10 +154,10 @@ export default function BuyCreditsPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
         </div>
       ) : packages.length === 0 ? (
-        <div className="bg-white rounded-2xl border-2 border-slate-200 p-8 text-center">
-          <PackageIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-slate-900 mb-2">No packages available</h3>
-          <p className="text-slate-600">Please check back later for credit packages.</p>
+        <div className="bg-white dark:bg-slate-800/80 rounded-2xl border-2 border-slate-200 dark:border-slate-700 p-8 text-center">
+          <PackageIcon className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">No packages available</h3>
+          <p className="text-slate-600 dark:text-slate-400">Please check back later for credit packages.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -213,17 +212,19 @@ export default function BuyCreditsPage() {
 
       {/* Purchase Summary */}
       {selectedPackage && (
-        <div className="bg-white rounded-2xl border-2 border-slate-200 p-8">
-          <h3 className="text-xl font-bold text-slate-900 mb-6">Summary</h3>
-          
+        <div className="bg-white dark:bg-slate-800/80 rounded-2xl border-2 border-slate-200 dark:border-slate-700 p-8">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Summary</h3>
+
           <div className="space-y-4 mb-8">
             <div className="flex justify-between items-center text-lg font-bold">
-              <span className="text-slate-900">Total Credits</span>
-              <span className="text-emerald-600">{selectedPackage.credits + selectedPackage.bonus}</span>
+              <span className="text-slate-900 dark:text-slate-100">Total Credits</span>
+              <span className="text-emerald-600 dark:text-emerald-400">
+                {selectedPackage.credits + selectedPackage.bonus}
+              </span>
             </div>
             <div className="flex justify-between items-center text-lg font-bold">
-              <span className="text-slate-900">Amount to Pay</span>
-              <span className="text-slate-900">₦{selectedPackage.price.toLocaleString()}</span>
+              <span className="text-slate-900 dark:text-slate-100">Amount to Pay</span>
+              <span className="text-slate-900 dark:text-slate-100">₦{selectedPackage.price.toLocaleString()}</span>
             </div>
           </div>
 

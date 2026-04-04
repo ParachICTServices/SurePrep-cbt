@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, BookOpen, User, LogOut, Menu } from "lucide-react";
 import { useEffect, useState } from "react";
+import { isAdminUser } from "@/app/lib/auth/roles";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -11,14 +12,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+    if (!user) {
       router.push("/login");
+      return;
+    }
+    if (isAdminUser(user)) {
+      router.replace("/admin/dashboard");
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || !user || isAdminUser(user)) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 text-slate-400">
+      <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-400">
         Loading dashboard...
       </div>
     );

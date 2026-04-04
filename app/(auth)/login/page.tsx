@@ -1,18 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/app/context/AuthContext";
+import { getPostLoginPath } from "@/app/lib/auth/roles";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 export default function Login() {
   const router = useRouter();
-const { login } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    router.replace(getPostLoginPath(user));
+  }, [authLoading, user, router]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,9 +36,9 @@ const { login } = useAuth();
     setLoading(true);
 
     try {
-      await login(email, password);
+      const loggedInUser = await login(email, password);
       toast.success("Login successful! Welcome back.");
-      router.push("/dashboard");
+      router.replace(getPostLoginPath(loggedInUser));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Connection failed. Please try again.");
     } finally {
@@ -77,23 +83,31 @@ const { login } = useAuth();
     setResetEmail("");
   };
 
+  if (authLoading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 text-slate-500 dark:text-slate-400">
+        {authLoading ? "Loading..." : "Redirecting..."}
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-slate-100"
+        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 border border-slate-100 dark:border-slate-800"
       >
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {showForgotPassword
               ? resetEmailSent
                 ? "Verify Reset"
                 : "Forgot Password"
               : "Welcome Back"}
           </h1>
-          <p className="text-slate-500 text-sm mt-2">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">
             {showForgotPassword
               ? resetEmailSent
                 ? "Check your inbox for the security code"

@@ -5,10 +5,7 @@ import { useEffect, useState } from "react";
 import { Loader2, LayoutDashboard, FileText, Users, LogOut, ShieldCheck, Menu, X, BookOpen, LayoutGrid, Package } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-
-const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
-  .split(",")
-  .map(email => email.trim().toLowerCase());
+import { isAdminUser } from "@/app/lib/auth/roles";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -25,11 +22,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return;
     }
 
-    const currentUserEmail = user.email?.toLowerCase().trim() || "";
-    const allowedAdmins = ADMIN_EMAILS.map(email => email.toLowerCase().trim());
-
-    if (!allowedAdmins.includes(currentUserEmail)) {
-      toast.error(`ACCESS DENIED.\n\nYou are logged in as: ${user.email}\n\nBut the Admin list only allows authorized personnel.`);
+    if (!isAdminUser(user)) {
+      toast.error("You do not have admin access.");
       router.push("/dashboard");
       return;
     }
@@ -64,7 +58,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex h-screen bg-slate-100">
+    <div className="flex h-screen bg-slate-900">
       {/* Mobile Header (UI Preserved) */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-slate-900 text-white flex items-center justify-between px-4 z-30 border-b border-slate-800">
         <div className="flex items-center gap-3">
