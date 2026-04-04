@@ -4,7 +4,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import {
-  Loader2, Edit2, Trash2, X, Save, LayoutGrid, AlertTriangle, Palette
+  Loader2, Edit2, Trash2, X, Save, LayoutGrid, AlertTriangle, Palette, Plus,
 } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
@@ -13,9 +13,12 @@ interface Subject {
   id: string;
   name: string;
   color: string;
+  category?: string;
   createdAt?: string;
   questionCount?: number;
 }
+
+type SubjectCategory = "sciences" | "arts" | "commercial" | "general";
 
 export default function SubjectsManager() {
   const { user, loading: authLoading } = useAuth();
@@ -26,6 +29,14 @@ export default function SubjectsManager() {
   const [editForm, setEditForm] = useState({ name: "", color: "" });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({
+    name: "",
+    color: "bg-blue-100 text-blue-600",
+    category: "general" as SubjectCategory,
+  });
+  const [creating, setCreating] = useState(false);
 
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
 
@@ -65,6 +76,7 @@ export default function SubjectsManager() {
             id: s.id || s._id,
             name: s.name,
             color: s.color,
+            category: s.category,
             createdAt: s.createdAt,
             questionCount: s.questionCount ?? 0,
         }));
@@ -113,6 +125,55 @@ export default function SubjectsManager() {
   const handleEdit = (subject: Subject) => {
     setEditingSubject(subject);
     setEditForm({ name: subject.name, color: subject.color });
+  };
+
+  const handleCreateSubject = async () => {
+    if (!addForm.name.trim()) {
+      toast.error("Subject name is required");
+      return;
+    }
+    if (!API_BASE_URL) {
+      toast.error("API is not configured");
+      return;
+    }
+    setCreating(true);
+    const token = localStorage.getItem("auth_token");
+    try {
+      const response = await fetch(`${API_BASE_URL}/subjects/admin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: addForm.name.trim(),
+          color: addForm.color,
+          category: addForm.category,
+        }),
+      });
+      if (!response.ok) throw new Error("Create failed");
+      const raw = await response.json();
+      const newSub = raw?.data ?? raw;
+      const id = newSub.id || newSub._id;
+      if (!id) throw new Error("Invalid response");
+      const created: Subject = {
+        id,
+        name: addForm.name.trim(),
+        color: addForm.color,
+        category: addForm.category,
+        questionCount: 0,
+      };
+      setSubjects((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setQuestionCounts((prev) => ({ ...prev, [id]: 0 }));
+      toast.success(`Subject "${created.name}" created`);
+      setShowAddModal(false);
+      setAddForm({ name: "", color: "bg-blue-100 text-blue-600", category: "general" });
+    } catch (error) {
+      console.error("Error creating subject:", error);
+      toast.error("Failed to create subject");
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -201,25 +262,43 @@ export default function SubjectsManager() {
     <div className="max-w-6xl mx-auto space-y-6">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Manage Subjects</h1>
-          <p className="text-slate-500">View and edit all exam subjects.</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Manage Subjects</h1>
+          <p className="text-slate-500 dark:text-slate-400">View and edit all exam subjects.</p>
         </div>
-        <div className="bg-slate-100 px-4 py-2 rounded-lg">
-          <p className="text-sm text-slate-600">
-            Total: <strong className="text-slate-900">{subjects.length}</strong> subjects
-          </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-lg">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Total: <strong className="text-slate-900 dark:text-white">{subjects.length}</strong> subjects
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+          >
+            <Plus size={18} />
+            Add subject
+          </button>
         </div>
       </div>
 
       {/* Subjects Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {subjects.length === 0 ? (
-          <div className="col-span-3 bg-white p-12 rounded-2xl border border-slate-200 text-center">
-            <LayoutGrid className="mx-auto text-slate-300 mb-4" size={48} />
-            <p className="text-slate-500">No subjects found.</p>
-            <p className="text-sm text-slate-400 mt-2">Use the Content Manager to create subjects.</p>
+          <div className="col-span-3 bg-white dark:bg-slate-900 p-12 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+            <LayoutGrid className="mx-auto text-slate-300 dark:text-slate-600 mb-4" size={48} />
+            <p className="text-slate-500 dark:text-slate-400">No subjects found.</p>
+            <p className="text-sm text-slate-400 dark:text-slate-500 mt-2 mb-6">Create your first subject to get started.</p>
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-700 transition"
+            >
+              <Plus size={18} />
+              Add subject
+            </button>
           </div>
         ) : (
           subjects.map((subject) => (
@@ -247,6 +326,91 @@ export default function SubjectsManager() {
           ))
         )}
       </div>
+
+      {/* Add Subject Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-8 border border-slate-200 dark:border-slate-700 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Add subject</h2>
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition text-slate-700 dark:text-slate-200"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Subject name *</label>
+                <input
+                  type="text"
+                  className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                  value={addForm.name}
+                  onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Mathematics"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Category</label>
+                <select
+                  className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-950 text-slate-900 dark:text-white"
+                  value={addForm.category}
+                  onChange={(e) =>
+                    setAddForm((f) => ({ ...f, category: e.target.value as SubjectCategory }))
+                  }
+                >
+                  <option value="general">General</option>
+                  <option value="sciences">Sciences</option>
+                  <option value="arts">Arts</option>
+                  <option value="commercial">Commercial</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                  <Palette size={16} /> Color theme
+                </label>
+                <div className="grid grid-cols-5 gap-3">
+                  {colorOptions.map((colorOption) => (
+                    <button
+                      key={colorOption.value}
+                      type="button"
+                      onClick={() => setAddForm((f) => ({ ...f, color: colorOption.value }))}
+                      className={`h-12 rounded-xl border-2 transition-all ${
+                        addForm.color === colorOption.value
+                          ? "border-slate-900 dark:border-white ring-2 ring-slate-900 dark:ring-white ring-offset-2 dark:ring-offset-slate-900"
+                          : "border-slate-200 dark:border-slate-600 hover:border-slate-300"
+                      } ${colorOption.preview}`}
+                      title={colorOption.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateSubject}
+                  disabled={creating || !addForm.name.trim()}
+                  className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {creating ? <Loader2 className="animate-spin" size={20} /> : <Plus size={20} />}
+                  {creating ? "Creating…" : "Create subject"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingSubject && (

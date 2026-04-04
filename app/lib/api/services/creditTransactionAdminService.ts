@@ -4,6 +4,7 @@ export interface AdminCreditTransactionListParams {
   limit?: number;
   page?: number;
   packageId?: string;
+  packageName?: string;
   type?: string;
   dateFrom?: string;
   dateTo?: string;

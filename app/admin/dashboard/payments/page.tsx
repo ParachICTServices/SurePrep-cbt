@@ -25,7 +25,7 @@ function formatDate(value: unknown): string {
 
 const emptyApplied: Pick<
   AdminCreditTransactionListParams,
-  'packageId' | 'type' | 'dateFrom' | 'dateTo' | 'userId'
+  'packageId' | 'packageName' | 'type' | 'dateFrom' | 'dateTo' | 'userId'
 > = {};
 
 export default function AdminPaymentsPage() {
@@ -42,7 +42,7 @@ export default function AdminPaymentsPage() {
   const [draftUserId, setDraftUserId] = useState('');
 
   const [applied, setApplied] = useState<
-    Pick<AdminCreditTransactionListParams, 'packageId' | 'type' | 'dateFrom' | 'dateTo' | 'userId'>
+    Pick<AdminCreditTransactionListParams, 'packageId' | 'packageName' | 'type' | 'dateFrom' | 'dateTo' | 'userId'>
   >(emptyApplied);
 
   const fetchList = useCallback(async () => {
@@ -116,47 +116,7 @@ export default function AdminPaymentsPage() {
         className="bg-white dark:bg-slate-800/90 rounded-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-6 mb-6 space-y-4 shadow-sm"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Package ID</label>
-            <input
-              value={draftPackageId}
-              onChange={(e) => setDraftPackageId(e.target.value)}
-              placeholder="pkg_premium_100"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500 outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Type</label>
-            <input
-              value={draftType}
-              onChange={(e) => setDraftType(e.target.value)}
-              placeholder="purchase"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500 outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">User ID</label>
-            <input
-              value={draftUserId}
-              onChange={(e) => setDraftUserId(e.target.value)}
-              placeholder="UUID"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500 outline-none font-mono"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Page size</label>
-            <input
-              type="number"
-              min={1}
-              max={100}
-              value={limit}
-              onChange={(e) => {
-                setLimit(Math.max(1, parseInt(e.target.value, 10) || 20));
-                setPage(1);
-              }}
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
-            />
-          </div>
+  
           <div>
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Date from</label>
             <input
