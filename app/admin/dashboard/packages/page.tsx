@@ -1,7 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Package, packageService } from '@/app/lib/api/services/packageService';
+import {
+  Package,
+  packageService,
+  getPackageCardBackground,
+} from '@/app/lib/api/services/packageService';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Package as PackageIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -94,7 +98,9 @@ export default function PackagesPage() {
         </div>
       ) : (
         <div className="grid gap-4">
-          {packages.map((pkg) => (
+          {packages.map((pkg) => {
+            const previewBg = getPackageCardBackground(pkg);
+            return (
             <div
               key={pkg.id}
               className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm"
@@ -102,6 +108,12 @@ export default function PackagesPage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <div
+                      className={`h-8 w-16 rounded-lg border border-slate-200 dark:border-slate-600 shrink-0 overflow-hidden ${previewBg.className}`}
+                      style={previewBg.style}
+                      title={pkg.color ? String(pkg.color) : 'Default palette'}
+                      aria-hidden
+                    />
                     <PackageIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{pkg.name}</h3>
                     <span className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded text-sm font-mono">
@@ -149,7 +161,8 @@ export default function PackagesPage() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

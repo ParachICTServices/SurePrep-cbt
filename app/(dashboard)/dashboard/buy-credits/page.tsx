@@ -2,7 +2,11 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { userService } from "@/app/lib/api/services/userService";
-import { packageService, Package } from "@/app/lib/api/services/packageService";
+import {
+  packageService,
+  Package,
+  getPackageCardBackground,
+} from "@/app/lib/api/services/packageService";
 import { Coins, Zap, Star, Crown, CheckCircle, Loader2, TrendingUp, Package as PackageIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,19 +23,6 @@ const getPackageIcon = (packageId: string) => {
   
   const key = Object.keys(iconMap).find(k => packageId.toLowerCase().includes(k));
   return key ? iconMap[key] : PackageIcon;
-};
-
-const getPackageColor = (packageId: string) => {
-  const colorMap: { [key: string]: string } = {
-    'starter': 'from-emerald-600 to-emerald-700',
-    'basic': 'from-emerald-600 to-emerald-700',
-    'premium': 'from-blue-600 to-blue-700',
-    'ultimate': 'from-purple-600 to-purple-700',
-    'pro': 'from-amber-600 to-amber-700',
-  };
-  
-  const key = Object.keys(colorMap).find(k => packageId.toLowerCase().includes(k));
-  return key ? colorMap[key] : 'from-slate-600 to-slate-700';
 };
 
 export default function BuyCreditsPage() {
@@ -164,17 +155,18 @@ export default function BuyCreditsPage() {
           {packages.map((pkg, index) => {
             const Icon = getPackageIcon(pkg.id);
             const isSelected = selectedPackage?.id === pkg.id;
-            const totalCredits = pkg.credits + pkg.bonus;
-            const color = getPackageColor(pkg.id);
+            const cardBg = getPackageCardBackground(pkg);
             const isPopular = index === 0; // Mark first package as popular
 
             return (
               <button
                 key={pkg.id}
+                type="button"
                 onClick={() => setSelectedPackage(pkg)}
-                className={`relative rounded-2xl p-6 transition-all transform hover:scale-105 ${
+                style={cardBg.style}
+                className={`relative rounded-2xl p-6 transition-all transform hover:scale-105 text-white ${
                   isSelected ? 'ring-4 ring-emerald-500 shadow-2xl scale-105' : 'shadow-lg'
-                } bg-gradient-to-br ${color} text-white`}
+                } ${cardBg.className}`.trim()}
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">

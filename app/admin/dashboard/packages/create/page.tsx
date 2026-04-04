@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { packageService, CreatePackageRequest } from '@/app/lib/api/services/packageService';
+import {
+  packageService,
+  CreatePackageRequest,
+  getPackageCardBackground,
+  type Package,
+} from '@/app/lib/api/services/packageService';
 import { toast } from 'sonner';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
@@ -12,6 +17,18 @@ const inputClass =
 
 const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2';
 
+const DEFAULT_CARD_COLOR = '#059669';
+
+function pickerSafeHex(value: string | undefined | null): string {
+  const v = value?.trim();
+  if (v && /^#[0-9A-Fa-f]{6}$/i.test(v)) return v.toLowerCase();
+  if (v && /^#[0-9A-Fa-f]{3}$/i.test(v)) {
+    const h = v.slice(1);
+    return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`.toLowerCase();
+  }
+  return DEFAULT_CARD_COLOR;
+}
+
 export default function CreatePackagePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -20,6 +37,7 @@ export default function CreatePackagePage() {
     credits: 0,
     bonus: 0,
     price: 0,
+    color: DEFAULT_CARD_COLOR,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +60,10 @@ export default function CreatePackagePage() {
 
     try {
       setLoading(true);
-      await packageService.createPackage(formData);
+      await packageService.createPackage({
+        ...formData,
+        color: pickerSafeHex(formData.color),
+      });
       toast.success('Package created successfully');
       router.push('/admin/dashboard/packages');
     } catch (error: unknown) {
@@ -153,9 +174,63 @@ export default function CreatePackagePage() {
             </p>
           </div>
 
+          <div>
+            <span className={labelClass}>Card color</span>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mb-3">
+              Used as the gradient on the student purchase page for this package.
+            </p>
+            <div className="flex flex-wrap items-center gap-4">
+              <input
+                type="color"
+                id="package-color"
+                value={pickerSafeHex(formData.color)}
+                onChange={(e) => handleChange('color', e.target.value)}
+                className="h-12 w-18 cursor-pointer rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-900 p-1 shadow-inner"
+                aria-label="Package card color"
+              />
+              <input
+                type="text"
+                value={formData.color ?? ''}
+                onChange={(e) => {
+                  let next = e.target.value.trim();
+                  if (next && !next.startsWith('#')) next = `#${next}`;
+                  handleChange('color', next);
+                }}
+                className={`${inputClass} max-w-38 font-mono text-sm`}
+                placeholder="#059669"
+                spellCheck={false}
+                maxLength={7}
+                aria-label="Package color as hex"
+              />
+            </div>
+          </div>
+
           {formData.credits > 0 && (
             <div className="bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-200 dark:border-slate-600 p-4">
               <h3 className="text-slate-900 dark:text-white font-medium mb-2">Package Preview</h3>
+              {(() => {
+                const previewPkg: Package = {
+                  id: 'preview',
+                  name: formData.name || 'Package',
+                  credits: formData.credits,
+                  bonus: formData.bonus,
+                  price: formData.price,
+                  color: formData.color,
+                };
+                const cardBg = getPackageCardBackground(previewPkg);
+                return (
+                  <div
+                    className={`mb-4 rounded-xl p-4 text-white shadow-md ${cardBg.className}`}
+                    style={cardBg.style}
+                  >
+                    <p className="font-semibold">{previewPkg.name}</p>
+                    <p className="text-sm text-white/90">
+                      {previewPkg.credits + previewPkg.bonus} credits ·{' '}
+                      {formData.price > 0 ? formatPrice(formData.price) : '—'}
+                    </p>
+                  </div>
+                );
+              })()}
               <div className="space-y-1 text-sm">
                 <p className="text-slate-700 dark:text-slate-300">
                   <span className="text-slate-500 dark:text-slate-400">Name:</span>{' '}
