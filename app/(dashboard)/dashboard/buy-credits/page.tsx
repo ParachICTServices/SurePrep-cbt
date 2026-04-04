@@ -1,66 +1,74 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { userService } from "@/app/lib/api/services/userService"; 
-import { Coins, Zap, Star, Crown, CheckCircle, Loader2, TrendingUp } from "lucide-react";
+import { userService } from "@/app/lib/api/services/userService";
+import { packageService, Package } from "@/app/lib/api/services/packageService";
+import { Coins, Zap, Star, Crown, CheckCircle, Loader2, TrendingUp, Package as PackageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 
-const CREDIT_PACKAGES = [
-  {
-    id: 'starter-basic',
-    name: 'Basic Pack',
-    credits: 50,
-    price: 1000,
-    bonus: 10,
-    popular: true,
-    icon: Zap,
-    color: 'from-emerald-600 to-emerald-700',
-    badge: 'bg-emerald-500',
-  },
-  {
-    id: 'starter-premium',
-    name: 'Premium Pack',
-    credits: 100,
-    price: 2000,
-    bonus: 50,
-    popular: false,
-    icon: Star,
-    color: 'from-blue-600 to-blue-700',
-    badge: 'bg-blue-500',
-  },
-  {
-    id: 'ultimate',
-    name: 'Ultimate Pack',
-    credits: 250,
-    price: 5000,
-    bonus: 150,
-    popular: false,
-    icon: Crown,
-    color: 'from-purple-600 to-purple-700',
-    badge: 'bg-purple-500',
-  },
-  {
-    id: 'pro',
-    name: 'Pro Pack',
-    credits: 500, 
-    price: 10000,
-    bonus: 200,
-    popular: false,
-    icon: Zap,
-    color: 'from-amber-600 to-amber-700',
-    badge: 'bg-amber-500',
-  }
-];
+// Icon and color mapping for packages
+const getPackageIcon = (packageId: string) => {
+  const iconMap: { [key: string]: any } = {
+    'starter': Zap,
+    'basic': Zap,
+    'premium': Star,
+    'ultimate': Crown,
+    'pro': Crown,
+  };
+  
+  const key = Object.keys(iconMap).find(k => packageId.toLowerCase().includes(k));
+  return key ? iconMap[key] : PackageIcon;
+};
+
+const getPackageColor = (packageId: string) => {
+  const colorMap: { [key: string]: string } = {
+    'starter': 'from-emerald-600 to-emerald-700',
+    'basic': 'from-emerald-600 to-emerald-700',
+    'premium': 'from-blue-600 to-blue-700',
+    'ultimate': 'from-purple-600 to-purple-700',
+    'pro': 'from-amber-600 to-amber-700',
+  };
+  
+  const key = Object.keys(colorMap).find(k => packageId.toLowerCase().includes(k));
+  return key ? colorMap[key] : 'from-slate-600 to-slate-700';
+};
 
 export default function BuyCreditsPage() {
   const { user, refreshUser } = useAuth();
-  const [selectedPackage, setSelectedPackage] = useState(CREDIT_PACKAGES[0]); 
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [loading, setLoading] = useState(false);
+  const [packagesLoading, setPackagesLoading] = useState(true);
+
+  useEffect(() => {
+    loadPackages();
+  }, []);
+
+  const loadPackages = async () => {
+    try {
+      setPackagesLoading(true);
+      const data = await packageService.getUserPackages();
+      setPackages(data);
+      if (data.length > 0) {
+        setSelectedPackage(data[0]); // Select first package by default
+      }
+    } catch (error) {
+      console.error('Error loading packages:', error);
+      toast.error('Failed to load packages');
+    } finally {
+      setPackagesLoading(false);
+    }
+  };
 
   const handlePurchase = async () => {
     if (!user) {
       toast.error("Please login to purchase credits");
+      return;
+    }
+
+    if (!selectedPackage) {
+      toast.error("Please select a package");
       return;
     }
 
@@ -73,7 +81,7 @@ export default function BuyCreditsPage() {
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY as string,
         email: user.email,
-        amount: selectedPackage.price * 100,
+        amount: selectedPackage.price * 100, // Convert to kobo
         currency: 'NGN',
         metadata: {
           custom_fields: [
@@ -142,76 +150,92 @@ export default function BuyCreditsPage() {
       </div>
 
       {/* Credit Packages */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {CREDIT_PACKAGES.map((pkg) => {
-          const Icon = pkg.icon;
-          const isSelected = selectedPackage.id === pkg.id;
-          const totalCredits = pkg.credits + pkg.bonus;
+      {packagesLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+        </div>
+      ) : packages.length === 0 ? (
+        <div className="bg-white rounded-2xl border-2 border-slate-200 p-8 text-center">
+          <PackageIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-900 mb-2">No packages available</h3>
+          <p className="text-slate-600">Please check back later for credit packages.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {packages.map((pkg, index) => {
+            const Icon = getPackageIcon(pkg.id);
+            const isSelected = selectedPackage?.id === pkg.id;
+            const totalCredits = pkg.credits + pkg.bonus;
+            const color = getPackageColor(pkg.id);
+            const isPopular = index === 0; // Mark first package as popular
 
-          return (
-            <button
-              key={pkg.id}
-              onClick={() => setSelectedPackage(pkg)}
-              className={`relative rounded-2xl p-6 transition-all transform hover:scale-105 ${
-                isSelected ? 'ring-4 ring-emerald-500 shadow-2xl scale-105' : 'shadow-lg'
-              } bg-gradient-to-br ${pkg.color} text-white`}
-            >
-              {pkg.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-amber-400 text-amber-900 text-[10px] font-black px-4 py-1 rounded-full shadow-lg">
-                    MOST POPULAR
-                  </span>
-                </div>
-              )}
-
-              <div className="flex justify-center mb-4">
-                <div className="bg-white/20 p-4 rounded-2xl">
-                  <Icon size={48} />
-                </div>
-              </div>
-
-              <h3 className="text-xl font-bold mb-2">{pkg.name}</h3>
-              <div className="mb-4">
-                <p className="text-2xl font-bold">{pkg.credits} credits</p>
-                {pkg.bonus > 0 && (
-                  <div className="mt-2 flex items-center justify-center gap-2 bg-white/20 rounded-lg py-1 px-3">
-                    <TrendingUp size={14} />
-                    <span className="text-xs font-bold">+{pkg.bonus} BONUS</span>
+            return (
+              <button
+                key={pkg.id}
+                onClick={() => setSelectedPackage(pkg)}
+                className={`relative rounded-2xl p-6 transition-all transform hover:scale-105 ${
+                  isSelected ? 'ring-4 ring-emerald-500 shadow-2xl scale-105' : 'shadow-lg'
+                } bg-gradient-to-br ${color} text-white`}
+              >
+                {isPopular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="bg-amber-400 text-amber-900 text-[10px] font-black px-4 py-1 rounded-full shadow-lg">
+                      MOST POPULAR
+                    </span>
                   </div>
                 )}
-              </div>
 
-              <div className="border-t border-white/20 pt-4">
-                <p className="text-xl font-bold">₦{pkg.price.toLocaleString()}</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
+                <div className="flex justify-center mb-4">
+                  <div className="bg-white/20 p-4 rounded-2xl">
+                    <Icon size={48} />
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-bold mb-2">{pkg.name}</h3>
+                <div className="mb-4">
+                  <p className="text-2xl font-bold">{pkg.credits} credits</p>
+                  {pkg.bonus > 0 && (
+                    <div className="mt-2 flex items-center justify-center gap-2 bg-white/20 rounded-lg py-1 px-3">
+                      <TrendingUp size={14} />
+                      <span className="text-xs font-bold">+{pkg.bonus} BONUS</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-white/20 pt-4">
+                  <p className="text-xl font-bold">₦{(pkg.price / 100).toLocaleString()}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Purchase Summary */}
-      <div className="bg-white rounded-2xl border-2 border-slate-200 p-8">
-        <h3 className="text-xl font-bold text-slate-900 mb-6">Summary</h3>
-        
-        <div className="space-y-4 mb-8">
-          <div className="flex justify-between items-center text-lg font-bold">
-            <span className="text-slate-900">Total Credits</span>
-            <span className="text-emerald-600">{selectedPackage.credits + selectedPackage.bonus}</span>
+      {selectedPackage && (
+        <div className="bg-white rounded-2xl border-2 border-slate-200 p-8">
+          <h3 className="text-xl font-bold text-slate-900 mb-6">Summary</h3>
+          
+          <div className="space-y-4 mb-8">
+            <div className="flex justify-between items-center text-lg font-bold">
+              <span className="text-slate-900">Total Credits</span>
+              <span className="text-emerald-600">{selectedPackage.credits + selectedPackage.bonus}</span>
+            </div>
+            <div className="flex justify-between items-center text-lg font-bold">
+              <span className="text-slate-900">Amount to Pay</span>
+              <span className="text-slate-900">₦{(selectedPackage.price / 100).toLocaleString()}</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center text-lg font-bold">
-            <span className="text-slate-900">Amount to Pay</span>
-            <span className="text-slate-900">₦{selectedPackage.price.toLocaleString()}</span>
-          </div>
-        </div>
 
-        <button
-          onClick={handlePurchase}
-          disabled={loading}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-3 text-lg"
-        >
-          {loading ? <Loader2 className="animate-spin" /> : "Pay Now & Get Credits"}
-        </button>
-      </div>
+          <button
+            onClick={handlePurchase}
+            disabled={loading || packagesLoading}
+            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-3 text-lg"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : "Pay Now & Get Credits"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

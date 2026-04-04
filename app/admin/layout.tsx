@@ -2,7 +2,7 @@
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, FileText, Users, LogOut, ShieldCheck, Menu, X, BookOpen, LayoutGrid } from "lucide-react";
+import { Loader2, LayoutDashboard, FileText, Users, LogOut, ShieldCheck, Menu, X, BookOpen, LayoutGrid, Package } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -136,6 +136,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             icon={<Users size={20} />} 
             label="Users" 
             active={pathname.includes("/users")} 
+          />
+          <NavLink 
+            href="/admin/dashboard/packages" 
+            icon={<Package size={20} />} 
+            label="Packages" 
+            active={pathname.includes("/packages")} 
           />
         </nav>
 
