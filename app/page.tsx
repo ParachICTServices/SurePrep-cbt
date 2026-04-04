@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, CheckCircle, Lock, Zap, Star, MapPin, Mail, Phone, Twitter, Instagram, Facebook, ShieldCheck, BookOpen, Clock, TrendingUp, Quote } from 'lucide-react'; 
+import { ArrowRight, CheckCircle, Lock, Zap, Star, MapPin, Mail, Phone, Twitter, Instagram, Facebook, ShieldCheck, BookOpen, Clock, TrendingUp, Quote } from 'lucide-react';
+import { ThemeToggle } from '@/app/components/theme-toggle'; 
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 40 },
@@ -89,21 +90,22 @@ const Counter = ({ target, suffix = "" }: { target: number; suffix?: string }) =
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col overflow-x-hidden">
       
       {/* 🌟 Navbar */}
       <motion.nav 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.8 }}
-        className="fixed w-full z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/5"
+        className="fixed w-full z-50 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/10"
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="text-xl font-bold text-emerald-400 tracking-tight flex items-center gap-2">
+          <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-center gap-2">
             <ShieldCheck size={24} />Sure Prep
           </span>
-          <div className="flex gap-4">
-            <Link href="/login" className="hidden md:block px-4 py-2 text-sm font-medium text-slate-400 hover:text-emerald-400 transition-colors">Login</Link>
+          <div className="flex items-center gap-3 md:gap-4">
+            <ThemeToggle />
+            <Link href="/login" className="hidden md:block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Login</Link>
             <Link href="/register" className="px-5 py-2.5 text-sm font-bold bg-emerald-500 text-white rounded-full hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-95">
               Get Started
             </Link>
@@ -205,7 +207,7 @@ export default function LandingPage() {
         </section>
 
         {/* 🌟 Features Bento Grid */}
-        <section className="py-24 bg-white border-t border-slate-100">
+        <section className="py-24 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
           <div className="max-w-7xl mx-auto px-6">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -214,8 +216,8 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Everything you need to score 300+</h2>
-              <p className="text-slate-500 mt-4 max-w-xl mx-auto">SurePrep CBT platform combines technology and proven learning methods to deliver the best JAMB CBT practice test experience.</p>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Everything you need to score 300+</h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-4 max-w-xl mx-auto">SurePrep CBT platform combines technology and proven learning methods to deliver the best JAMB CBT practice test experience.</p>
             </motion.div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -225,18 +227,18 @@ export default function LandingPage() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="md:col-span-2 p-10 rounded-[2rem] bg-slate-50 border border-slate-100 relative overflow-hidden group"
+                className="md:col-span-2 p-10 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 relative overflow-hidden group"
               >
                 <div className="relative z-10">
                   <div className="h-14 w-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 shadow-sm">
                     <Zap size={28} />
                   </div>
-                  <h3 className="text-2xl font-bold mb-3 text-slate-900">Real-Time Speed Analytics</h3>
-                  <p className="text-slate-500 text-lg leading-relaxed max-w-md">We track exactly how fast you answer questions compared to the official CBT Exam timer, helping you build speed.</p>
+                  <h3 className="text-2xl font-bold mb-3 text-slate-900 dark:text-white">Real-Time Speed Analytics</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed max-w-md">We track exactly how fast you answer questions compared to the official CBT Exam timer, helping you build speed.</p>
                 </div>
                 <div className="absolute top-1/2 right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition duration-500" />
                 <motion.div 
-                  className="absolute bottom-0 right-0 w-64 h-32 bg-white rounded-tl-[2rem] border-t border-l border-slate-100 p-6 shadow-sm"
+                  className="absolute bottom-0 right-0 w-64 h-32 bg-white dark:bg-slate-900 rounded-tl-[2rem] border-t border-l border-slate-100 dark:border-slate-700 p-6 shadow-sm"
                   initial={{ y: 50 }}
                   whileInView={{ y: 0 }}
                   transition={{ delay: 0.2 }}
@@ -279,13 +281,13 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="p-10 rounded-[2rem] bg-white border border-slate-200 hover:border-emerald-200 transition-colors shadow-sm hover:shadow-lg hover:shadow-emerald-100/50"
+                className="p-10 rounded-[2rem] bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-700 transition-colors shadow-sm hover:shadow-lg hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/20"
               >
-                <div className="h-14 w-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 mb-6 border border-emerald-100">
+                <div className="h-14 w-14 bg-emerald-50 dark:bg-emerald-950/50 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-6 border border-emerald-100 dark:border-emerald-900/50">
                   <CheckCircle size={28} />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-slate-900">Topic Filtering</h3>
-                <p className="text-slate-500">Don't just practice random questions. Filter by "Calculus", "Oral English", or "Organic Chemistry".</p>
+                <h3 className="text-xl font-bold mb-3 text-slate-900 dark:text-white">Topic Filtering</h3>
+                <p className="text-slate-500 dark:text-slate-400">Don't just practice random questions. Filter by "Calculus", "Oral English", or "Organic Chemistry".</p>
               </motion.div>
               
               <motion.div 
@@ -294,15 +296,15 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
-                className="md:col-span-2 p-10 rounded-[2rem] bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100"
+                className="md:col-span-2 p-10 rounded-[2rem] bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border border-amber-100 dark:border-amber-900/40"
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="bg-amber-100 p-3 rounded-xl text-amber-600">
+                  <div className="bg-amber-100 dark:bg-amber-900/50 p-3 rounded-xl text-amber-600 dark:text-amber-400">
                       <Star size={24} fill="currentColor" />
                   </div>
-                  <h3 className="text-xl font-bold text-amber-900">Trusted by Top Tutors</h3>
+                  <h3 className="text-xl font-bold text-amber-900 dark:text-amber-100">Trusted by Top Tutors</h3>
                 </div>
-                <p className="text-amber-900/70 leading-relaxed">Backed by Nigeria's leading home tutoring agency. We use the same curriculum that has helped students gain admission into UNILAG, UI, and ABU.</p>
+                <p className="text-amber-900/70 dark:text-amber-200/80 leading-relaxed">Backed by Nigeria's leading home tutoring agency. We use the same curriculum that has helped students gain admission into UNILAG, UI, and ABU.</p>
               </motion.div>
             </div>
           </div>
@@ -410,7 +412,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-               <section className="py-28 bg-white relative overflow-hidden">
+               <section className="py-28 bg-white dark:bg-slate-900 relative overflow-hidden">
           {/* Faint ruled-paper lines in background */}
           <div className="absolute inset-0 opacity-[0.025]" style={{
             backgroundImage: 'repeating-linear-gradient(transparent, transparent 31px, #065f46 31px, #065f46 32px)',
@@ -426,11 +428,11 @@ export default function LandingPage() {
             >
               <div>
                 <p className="text-emerald-600 font-mono text-sm uppercase tracking-[0.2em] mb-4">— From the students</p>
-                <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 leading-tight">
+                <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight">
                   Real results.<br />No cap.
                 </h2>
               </div>
-              <p className="text-slate-400 max-w-xs text-sm leading-relaxed">These are actual students who used . We didn't ask them to be nice about it.</p>
+              <p className="text-slate-500 dark:text-slate-400 max-w-xs text-sm leading-relaxed">These are actual students who used . We didn't ask them to be nice about it.</p>
             </motion.div>
 
                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-5">
@@ -520,7 +522,7 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.2 }}
-                  className="bg-slate-50 border border-slate-100 rounded-[1.5rem] p-7 flex flex-col md:flex-row items-start md:items-center gap-6"
+                  className="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700 rounded-[1.5rem] p-7 flex flex-col md:flex-row items-start md:items-center gap-6"
                 >
                   <div className="h-14 w-14 shrink-0 rounded-2xl bg-emerald-100 flex items-center justify-center font-black text-emerald-600 text-lg">A</div>
                   <div>
@@ -546,7 +548,7 @@ export default function LandingPage() {
               transition={{ delay: 0.3 }}
               className="mt-14 text-center"
             >
-              <p className="text-slate-400 text-sm mb-6">You could be next. Seriously.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">You could be next. Seriously.</p>
               <Link href="/register">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -563,25 +565,25 @@ export default function LandingPage() {
       </main>
 
       {/* 🌟 Footer */}
-      <footer className="bg-white border-t border-slate-200 pt-16 pb-8">
+      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
             
             <div className="col-span-1 md:col-span-1 space-y-4">
-              <span className="text-2xl font-bold text-emerald-600 tracking-tight flex items-center gap-2"><ShieldCheck size={24}/> Sure Prep</span>
-              <p className="text-slate-500 text-sm leading-relaxed">
+              <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-center gap-2"><ShieldCheck size={24}/> Sure Prep</span>
+              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
                 Empowering Nigerian students to smash their JAMB CBT practice and exams with confidence. We provide the ultimate CBT for JAMB platform to ensure you are exam-ready.
               </p>
               <div className="flex gap-4 pt-2">
-                <Link href="#" className="h-10 w-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all"><Twitter size={18} /></Link>
-                <Link href="#" className="h-10 w-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all"><Facebook size={18} /></Link>
-                <Link href="#" className="h-10 w-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all"><Instagram size={18} /></Link>
+                <Link href="#" className="h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"><Twitter size={18} /></Link>
+                <Link href="#" className="h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"><Facebook size={18} /></Link>
+                <Link href="#" className="h-10 w-10 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"><Instagram size={18} /></Link>
               </div>
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-900 mb-6">Platform</h4>
-              <ul className="space-y-3 text-sm text-slate-500">
+              <h4 className="font-bold text-slate-900 dark:text-white mb-6">Platform</h4>
+              <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
                 <li><Link href="/login" className="hover:text-emerald-600 transition-colors">Login</Link></li>
                 <li><Link href="/register" className="hover:text-emerald-600 transition-colors">Create Account</Link></li>
                 <li><Link href="/demo" className="hover:text-emerald-600 transition-colors">Try Demo</Link></li>
@@ -589,15 +591,15 @@ export default function LandingPage() {
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-900 mb-6">Resources</h4>
-              <ul className="space-y-3 text-sm text-slate-500">
-                <li><Link href="/faq" className="hover:text-emerald-600 transition-colors">FAQs</Link></li>
+              <h4 className="font-bold text-slate-900 dark:text-white mb-6">Resources</h4>
+              <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
+                <li><Link href="/faq" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">FAQs</Link></li>
               </ul>
             </div>
 
             <div>
-              <h4 className="font-bold text-slate-900 mb-6">Contact</h4>
-              <ul className="space-y-4 text-sm text-slate-500">
+              <h4 className="font-bold text-slate-900 dark:text-white mb-6">Contact</h4>
+              <ul className="space-y-4 text-sm text-slate-500 dark:text-slate-400">
                 
                 <li className="flex items-center gap-3">
                   <Mail size={18} className="text-emerald-600 shrink-0" />
@@ -607,11 +609,11 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
             <p>&copy; {new Date().getFullYear()} Sure Prep. All rights reserved.</p>
             <div className="flex gap-6">
-              <Link href="#" className="hover:text-slate-600">Privacy Policy</Link>
-              <Link href="#" className="hover:text-slate-600">Terms of Service</Link>
+              <Link href="#" className="hover:text-slate-800 dark:hover:text-slate-200">Privacy Policy</Link>
+              <Link href="#" className="hover:text-slate-800 dark:hover:text-slate-200">Terms of Service</Link>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/app/context/AuthContext";
 import { isAdminUser } from "@/app/lib/auth/roles";
 import { authService } from "@/app/lib/api/services/authService";
+import { ThemeToggle } from "@/app/components/theme-toggle";
 
 function AdminLoginForm() {
   const router = useRouter();
@@ -54,47 +55,50 @@ function AdminLoginForm() {
 
   if (authLoading || user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4 text-slate-400">
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 px-4 text-slate-500 dark:text-slate-400">
         {authLoading ? "Loading..." : "Redirecting..."}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
-      <div className="w-full max-w-md bg-slate-800 rounded-2xl border border-slate-700 p-8 shadow-2xl">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-900 px-4 py-8">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-xl dark:shadow-2xl">
         <div className="text-center mb-8">
-          <div className="h-16 w-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-600">
-            <LockIcon className="text-emerald-500" size={32} />
+          <div className="h-16 w-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-slate-600">
+            <LockIcon className="text-emerald-600 dark:text-emerald-500" size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-white">Admin Restricted Area</h1>
-          <p className="text-slate-400 text-sm mt-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Admin Restricted Area</h1>
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
             Sign in — we&apos;ll email you a one-time code.
           </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
               Email
             </label>
             <input
               type="email"
               required
-              className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition"
               placeholder="admin@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
               Password
             </label>
             <input
               type="password"
               required
-              className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-emerald-500 outline-none transition"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -110,7 +114,7 @@ function AdminLoginForm() {
           </button>
         </form>
 
-        <p className="text-center text-slate-500 text-xs mt-6">
+        <p className="text-center text-slate-500 dark:text-slate-500 text-xs mt-6">
           System activity is monitored and logged.
         </p>
       </div>
@@ -122,7 +126,7 @@ export default function AdminLogin() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 text-slate-500">
           <Loader2 className="animate-spin" />
         </div>
       }

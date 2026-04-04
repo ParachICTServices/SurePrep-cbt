@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/app/context/AuthContext";
 import { getPostLoginPath } from "@/app/lib/auth/roles";
+import { ThemeToggle } from "@/app/components/theme-toggle";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
@@ -92,7 +93,10 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4">
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-8">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -144,9 +148,9 @@ export default function Login() {
                   <ShieldCheck className="text-blue-600" size={32} />
                 </div>
 
-                <div className="bg-slate-50 rounded-lg p-6 mb-6 border border-slate-200">
-                  <p className="text-sm text-slate-700 mb-2 font-medium">Reset Code Sent to:</p>
-                  <p className="font-bold text-slate-900 mb-6 break-all">{resetEmail}</p>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6 mb-6 border border-slate-200 dark:border-slate-700">
+                  <p className="text-sm text-slate-700 dark:text-slate-300 mb-2 font-medium">Reset Code Sent to:</p>
+                  <p className="font-bold text-slate-900 dark:text-white mb-6 break-all">{resetEmail}</p>
 
                   <Link
                     href={`/reset-password/verify-otp?email=${encodeURIComponent(resetEmail)}`}
@@ -173,7 +177,7 @@ export default function Login() {
                 className="space-y-4"
               >
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Email Address
                   </label>
                   <div className="relative">
@@ -187,7 +191,7 @@ export default function Login() {
                       disabled={resetLoading}
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-slate-100"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-slate-100 dark:disabled:bg-slate-800"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -198,7 +202,7 @@ export default function Login() {
                     type="button"
                     onClick={handleBackToLogin}
                     disabled={resetLoading}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl transition"
+                    className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3 rounded-xl transition"
                   >
                     Cancel
                   </button>
@@ -222,21 +226,21 @@ export default function Login() {
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email</label>
                 <input
                   type="email"
                   required
                   disabled={loading}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-slate-100"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-slate-100 dark:disabled:bg-slate-800"
                   placeholder="you@example.com"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-slate-700">Password</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(true)}
@@ -253,13 +257,13 @@ export default function Login() {
                     disabled={loading}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none pr-12 disabled:bg-slate-100"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none pr-12 disabled:bg-slate-100 dark:disabled:bg-slate-800"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, Plus, Minus, ArrowRight, Mail } from 'lucide-react';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 
 const faqs = [
   {
@@ -93,16 +94,16 @@ const FAQItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.06 }}
-      className="border-b border-slate-100 last:border-0"
+      className="border-b border-slate-100 dark:border-slate-800 last:border-0"
     >
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-start justify-between gap-6 py-6 text-left group"
       >
-        <span className={`font-semibold text-base leading-snug transition-colors ${open ? 'text-emerald-600' : 'text-slate-800 group-hover:text-emerald-600'}`}>
+        <span className={`font-semibold text-base leading-snug transition-colors ${open ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'}`}>
           {q}
         </span>
-        <span className={`shrink-0 mt-0.5 h-6 w-6 rounded-full flex items-center justify-center transition-all ${open ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600'}`}>
+        <span className={`shrink-0 mt-0.5 h-6 w-6 rounded-full flex items-center justify-center transition-all ${open ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/50 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'}`}>
           {open ? <Minus size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
         </span>
       </button>
@@ -115,7 +116,7 @@ const FAQItem = ({ q, a, index }: { q: string; a: string; index: number }) => {
             transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
             className="overflow-hidden"
           >
-            <p className="pb-6 text-slate-500 leading-relaxed text-sm pr-10">
+            <p className="pb-6 text-slate-500 dark:text-slate-400 leading-relaxed text-sm pr-10">
               {a}
             </p>
           </motion.div>
@@ -131,21 +132,22 @@ export default function FAQPage() {
   const currentFAQs = faqs.find(f => f.category === activeCategory)?.questions || [];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col overflow-x-hidden">
 
       {/* Navbar */}
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.8 }}
-        className="fixed w-full z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100/50"
+        className="fixed w-full z-50 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-b border-emerald-100/50 dark:border-emerald-900/30"
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-emerald-600 tracking-tight flex items-center gap-2">
+          <Link href="/" className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-center gap-2">
             <ShieldCheck size={24} /> Sure Prep
           </Link>
-          <div className="flex gap-4">
-            <Link href="/login" className="hidden md:block px-4 py-2 text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors">Login</Link>
+          <div className="flex items-center gap-3 md:gap-4">
+            <ThemeToggle />
+            <Link href="/login" className="hidden md:block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Login</Link>
             <Link href="/register" className="px-5 py-2.5 text-sm font-bold bg-emerald-600 text-white rounded-full hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-200 transition-all active:scale-95">
               Get Started
             </Link>
@@ -166,13 +168,13 @@ export default function FAQPage() {
             transition={{ duration: 0.7 }}
           >
             <p className="text-emerald-600 font-mono text-sm uppercase tracking-[0.2em] mb-5">— Help & FAQ</p>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 leading-tight mb-6">
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight mb-6">
               Questions?<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">
                 We've got answers.
               </span>
             </h1>
-            <p className="text-slate-500 text-lg max-w-xl leading-relaxed">
+            <p className="text-slate-500 dark:text-slate-400 text-lg max-w-xl leading-relaxed">
               Everything you need to know about how Sure Prep works, what's free, and what happens when things go sideways.
             </p>
           </motion.div>
@@ -190,7 +192,7 @@ export default function FAQPage() {
               className="md:col-span-3"
             >
               <div className="sticky top-28">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Categories</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">Categories</p>
                 <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
                   {faqs.map((section) => (
                     <button
@@ -198,8 +200,8 @@ export default function FAQPage() {
                       onClick={() => setActiveCategory(section.category)}
                       className={`shrink-0 text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
                         activeCategory === section.category
-                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200'
-                          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 dark:shadow-emerald-900/40'
+                          : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100'
                       }`}
                     >
                       {section.category}
@@ -230,11 +232,11 @@ export default function FAQPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-white rounded-[2rem] border border-slate-100 shadow-sm px-8 md:px-12 py-4"
+                  className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm px-8 md:px-12 py-4"
                 >
-                  <div className="pt-6 pb-2 mb-2 border-b border-slate-100">
-                    <h2 className="text-xl font-bold text-slate-900">{activeCategory}</h2>
-                    <p className="text-slate-400 text-sm mt-1">{currentFAQs.length} questions</p>
+                  <div className="pt-6 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{activeCategory}</h2>
+                    <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">{currentFAQs.length} questions</p>
                   </div>
 
                   {currentFAQs.map((item, i) => (
@@ -291,15 +293,15 @@ export default function FAQPage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-8 mt-8">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <Link href="/" className="font-bold text-emerald-600 flex items-center gap-1.5">
+      <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-8 mt-8">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400 dark:text-slate-500">
+          <Link href="/" className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
             <ShieldCheck size={16} /> Sure Prep
           </Link>
           <p>&copy; {new Date().getFullYear()} Sure Prep. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-slate-600">Privacy Policy</Link>
-            <Link href="#" className="hover:text-slate-600">Terms of Service</Link>
+            <Link href="#" className="hover:text-slate-600 dark:hover:text-slate-300">Privacy Policy</Link>
+            <Link href="#" className="hover:text-slate-600 dark:hover:text-slate-300">Terms of Service</Link>
           </div>
         </div>
       </footer>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, ArrowRight, Clock, Search, BookOpen } from 'lucide-react';
+import { ThemeToggle } from '@/app/components/theme-toggle';
 
 interface Article {
   _id: string;
@@ -40,24 +41,24 @@ const ArticleCard = ({ article, index }: { article: Article; index: number }) =>
     transition={{ delay: index * 0.07 }}
   >
     <Link href={`/blog/${article.slug}`} className="group block h-full">
-      <div className="h-full bg-slate-900 border border-white/5 rounded-[1.5rem] p-7 flex flex-col gap-5 hover:border-emerald-500/30 hover:bg-slate-800/80 transition-all duration-300 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/5 group-hover:to-teal-500/5 transition-all duration-500 rounded-[1.5rem]" />
+      <div className="h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-[1.5rem] p-7 flex flex-col gap-5 hover:border-emerald-500/40 dark:hover:border-emerald-500/30 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-all duration-300 relative overflow-hidden shadow-sm dark:shadow-none">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/[0.06] dark:group-hover:from-emerald-500/5 group-hover:to-teal-500/[0.06] dark:group-hover:to-teal-500/5 transition-all duration-500 rounded-[1.5rem]" />
         <div className="relative z-10 flex flex-col gap-4 flex-grow">
-          <span className={`self-start text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${categoryColors[article.category] ?? 'bg-white/5 text-slate-400 border-white/10'}`}>
+          <span className={`self-start text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${categoryColors[article.category] ?? 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-white/10'}`}>
             {article.category}
           </span>
-          <h3 className="text-white font-bold text-lg leading-snug group-hover:text-emerald-300 transition-colors">
+          <h3 className="text-slate-900 dark:text-white font-bold text-lg leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
             {article.title}
           </h3>
-          <p className="text-slate-400 text-sm leading-relaxed flex-grow">{article.excerpt}</p>
+          <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed flex-grow">{article.excerpt}</p>
         </div>
-        <div className="relative z-10 flex items-center justify-between pt-4 border-t border-white/5">
-          <div className="flex items-center gap-3 text-slate-500 text-xs">
+        <div className="relative z-10 flex items-center justify-between pt-4 border-t border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-3 text-slate-500 dark:text-slate-500 text-xs">
             <span className="flex items-center gap-1.5"><Clock size={12} />{article.readTime} min read</span>
-            <span className="h-1 w-1 rounded-full bg-slate-700" />
+            <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
             <span>{new Date(article.publishedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
           </div>
-          <ArrowRight size={16} className="text-slate-600 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+          <ArrowRight size={16} className="text-slate-400 dark:text-slate-600 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
         </div>
       </div>
     </Link>
@@ -100,17 +101,18 @@ export default function BlogClient({ articles }: { articles: Article[] }) {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans flex flex-col overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans flex flex-col overflow-x-hidden">
 
       {/* Navbar */}
-      <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className="fixed w-full z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/5">
+      <motion.nav initial={{ y: -100 }} animate={{ y: 0 }} transition={{ duration: 0.8 }} className="fixed w-full z-50 bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/10">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-emerald-400 tracking-tight flex items-center gap-2">
+          <Link href="/" className="text-xl font-bold text-emerald-600 dark:text-emerald-400 tracking-tight flex items-center gap-2">
             <ShieldCheck size={24} /> Sure Prep
           </Link>
-          <div className="flex gap-4">
-            <Link href="/login" className="hidden md:block px-4 py-2 text-sm font-medium text-slate-400 hover:text-emerald-400 transition-colors">Login</Link>
-            <Link href="/register" className="px-5 py-2.5 text-sm font-bold bg-emerald-500 text-white rounded-full hover:bg-emerald-400 transition-all active:scale-95">Get Started</Link>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link href="/login" className="hidden md:block px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Login</Link>
+            <Link href="/register" className="px-5 py-2.5 text-sm font-bold bg-emerald-600 dark:bg-emerald-500 text-white rounded-full hover:bg-emerald-700 dark:hover:bg-emerald-400 transition-all active:scale-95">Get Started</Link>
           </div>
         </div>
       </motion.nav>
@@ -121,13 +123,13 @@ export default function BlogClient({ articles }: { articles: Article[] }) {
         <section className="max-w-7xl mx-auto px-6 pt-12 pb-16 relative">
           <div className="absolute -top-20 -right-20 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-3xl" />
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <p className="text-emerald-400 font-mono text-sm uppercase tracking-[0.2em] mb-5">— Study Resources</p>
+            <p className="text-emerald-600 dark:text-emerald-400 font-mono text-sm uppercase tracking-[0.2em] mb-5">— Study Resources</p>
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight">
+              <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight leading-tight text-slate-900 dark:text-white">
                 Tips, guides &<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">exam playbooks.</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300">exam playbooks.</span>
               </h1>
-              <p className="text-slate-400 max-w-xs text-sm leading-relaxed">Written for Nigerian students. No fluff — just things that actually help you score higher.</p>
+              <p className="text-slate-600 dark:text-slate-400 max-w-xs text-sm leading-relaxed">Written for Nigerian students. No fluff — just things that actually help you score higher.</p>
             </div>
           </motion.div>
         </section>
@@ -136,12 +138,12 @@ export default function BlogClient({ articles }: { articles: Article[] }) {
         <section className="max-w-7xl mx-auto px-6 mb-10">
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div className="relative w-full sm:w-72">
-              <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
-              <input type="text" placeholder="Search articles..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-white/10 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors" />
+              <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+              <input type="text" placeholder="Search articles..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors" />
             </div>
             <div className="flex gap-2 flex-wrap">
               {CATEGORIES.map(cat => (
-                <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeCategory === cat ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-900 text-slate-400 border border-white/5 hover:border-white/20 hover:text-white'}`}>
+                <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeCategory === cat ? 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/5 hover:border-emerald-500/30 dark:hover:border-white/20 hover:text-slate-900 dark:hover:text-white'}`}>
                   {cat !== "All" && <span className={`inline-block h-1.5 w-1.5 rounded-full mr-1.5 ${categoryDot[cat]}`} />}
                   {cat}
                 </button>
@@ -158,9 +160,9 @@ export default function BlogClient({ articles }: { articles: Article[] }) {
         {/* Grid */}
         <section className="max-w-7xl mx-auto px-6">
           {articles.length === 0 ? (
-            <div className="text-center py-24 text-slate-500">
+            <div className="text-center py-24 text-slate-500 dark:text-slate-500">
               <BookOpen size={40} className="mx-auto mb-4 opacity-30" />
-              <p className="text-sm font-medium mb-1">No articles published yet.</p>
+              <p className="text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">No articles published yet.</p>
               <p className="text-xs">Check back soon — content is on the way.</p>
             </div>
           ) : filtered.length > 0 ? (
@@ -168,22 +170,22 @@ export default function BlogClient({ articles }: { articles: Article[] }) {
               {filtered.map((article, i) => <ArticleCard key={article._id} article={article} index={i} />)}
             </div>
           ) : (
-            <div className="text-center py-24 text-slate-500">
+            <div className="text-center py-24 text-slate-500 dark:text-slate-500">
               <BookOpen size={40} className="mx-auto mb-4 opacity-30" />
-              <p className="text-sm">No articles found. Try a different search or category.</p>
+              <p className="text-sm text-slate-700 dark:text-slate-300">No articles found. Try a different search or category.</p>
             </div>
           )}
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-8">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <Link href="/" className="font-bold text-emerald-400 flex items-center gap-1.5"><ShieldCheck size={16} /> Sure Prep</Link>
+      <footer className="border-t border-slate-200 dark:border-white/5 py-8 bg-white dark:bg-transparent">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-500">
+          <Link href="/" className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5"><ShieldCheck size={16} /> Sure Prep</Link>
           <p>&copy; {new Date().getFullYear()} Sure Prep. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="/faq" className="hover:text-slate-300">FAQ</Link>
-            <Link href="#" className="hover:text-slate-300">Privacy Policy</Link>
+            <Link href="/faq" className="hover:text-slate-800 dark:hover:text-slate-300">FAQ</Link>
+            <Link href="#" className="hover:text-slate-800 dark:hover:text-slate-300">Privacy Policy</Link>
           </div>
         </div>
       </footer>

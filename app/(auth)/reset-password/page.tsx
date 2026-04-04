@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Lock, CheckCircle, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/app/components/theme-toggle";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 const MIN_PASSWORD_LENGTH = 10;
@@ -46,12 +47,12 @@ function ResetPasswordForm() {
 
   if (!email || !otp) {
     return (
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <AlertTriangle className="text-red-600" size={32} />
+      <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 text-center border border-slate-100 dark:border-slate-800">
+        <div className="w-16 h-16 bg-red-100 dark:bg-red-950/50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="text-red-600 dark:text-red-400" size={32} />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Invalid Link</h2>
-        <p className="text-slate-500 mb-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Invalid Link</h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">
           Something went wrong. Please restart the password reset process.
         </p>
         <button
@@ -116,12 +117,12 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="text-emerald-600" size={32} />
+      <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 text-center border border-slate-100 dark:border-slate-800">
+        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={32} />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Password Reset!</h2>
-        <p className="text-slate-500 mb-6">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Password Reset!</h2>
+        <p className="text-slate-500 dark:text-slate-400 mb-6">
           Your password has been successfully reset.
         </p>
         <button
@@ -135,32 +136,32 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+    <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 border border-slate-100 dark:border-slate-800">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Lock className="text-emerald-600" size={32} />
+        <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/50 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="text-emerald-600 dark:text-emerald-400" size={32} />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900">Reset Password</h2>
-        <p className="text-slate-500 text-sm mt-2">Enter your new password</p>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Reset Password</h2>
+        <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">Enter your new password</p>
       </div>
 
       <form onSubmit={handleResetPassword} className="space-y-4">
         {/* New Password */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">New Password</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">New Password</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 pr-11 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full px-4 py-3 pr-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
               placeholder="••••••••"
             />
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -174,12 +175,12 @@ function ResetPasswordForm() {
                   <div
                     key={level}
                     className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                      strength.score >= level ? strength.color : "bg-slate-200"
+                      strength.score >= level ? strength.color : "bg-slate-200 dark:bg-slate-700"
                     }`}
                   />
                 ))}
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Strength:{" "}
                 <span className={`font-medium ${
                   strength.score <= 1 ? "text-red-500" : strength.score <= 2 ? "text-yellow-500" : "text-emerald-600"
@@ -187,7 +188,7 @@ function ResetPasswordForm() {
                   {strength.label}
                 </span>
                 {!isPasswordValid && (
-                  <span className="text-slate-400"> — minimum {MIN_PASSWORD_LENGTH} characters</span>
+                  <span className="text-slate-400 dark:text-slate-500"> — minimum {MIN_PASSWORD_LENGTH} characters</span>
                 )}
               </p>
             </div>
@@ -196,20 +197,20 @@ function ResetPasswordForm() {
 
         {/* Confirm Password */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Confirm Password</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Confirm Password</label>
           <div className="relative">
             <input
               type={showConfirm ? "text" : "password"}
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 pr-11 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full px-4 py-3 pr-11 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"
               placeholder="••••••••"
             />
             <button
               type="button"
               onClick={() => setShowConfirm((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
               aria-label={showConfirm ? "Hide password" : "Show password"}
             >
               {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -235,8 +236,11 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <Suspense fallback={<Loader2 className="animate-spin text-emerald-600" size={32} />}>
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 py-8">
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+      <Suspense fallback={<Loader2 className="animate-spin text-emerald-600 dark:text-emerald-400" size={32} />}>
         <ResetPasswordForm />
       </Suspense>
     </div>

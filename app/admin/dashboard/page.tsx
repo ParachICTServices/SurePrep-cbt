@@ -118,18 +118,18 @@ export default function AdminOverview() {
   };
 
   return (
-    <div className="space-y-8 px-4 sm:px-6 lg:px-8 py-6">
+    <div className="space-y-8 px-4 sm:px-6 lg:px-8 py-6 text-slate-900 dark:text-slate-100">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Admin Overview</h1>
-          <p className="text-slate-500 mt-1 text-sm">Platform credit economy and health.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Admin Overview</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">Platform credit economy and health.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={handleRefresh} disabled={refreshing} className="flex items-center gap-2 text-sm font-bold text-slate-700 bg-slate-100 border border-slate-200 px-4 py-2 rounded-xl hover:bg-slate-200 transition disabled:opacity-50">
+          <button onClick={handleRefresh} disabled={refreshing} className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition disabled:opacity-50">
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
-          <Link href="/admin/dashboard/users" className="hidden sm:flex items-center gap-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl hover:bg-emerald-100 transition">
+          <Link href="/admin/dashboard/users" className="hidden sm:flex items-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 px-4 py-2 rounded-xl hover:bg-emerald-100 dark:hover:bg-emerald-950/60 transition">
             <Users size={16} /> Manage Users <ArrowUpRight size={14} />
           </Link>
         </div>
@@ -143,43 +143,43 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-fit">
-          <h2 className="font-bold text-slate-800 flex items-center gap-2 mb-5">
-            <TrendingUp size={18} className="text-emerald-500" /> Credit Insights
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col h-fit">
+          <h2 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-5">
+            <TrendingUp size={18} className="text-emerald-500 dark:text-emerald-400" /> Credit Insights
           </h2>
           <div className="space-y-4">
-            <div className="p-4 bg-slate-50 rounded-xl">
-              <p className="text-xs text-slate-500 mb-1">Avg. Credits per User</p>
-              <p className="text-xl font-bold text-slate-900">{stats.users > 0 ? Math.round(stats.totalCredits / stats.users) : 0}</p>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-xl">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Avg. Credits per User</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white">{stats.users > 0 ? Math.round(stats.totalCredits / stats.users) : 0}</p>
             </div>
-            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-              <p className="text-xs text-emerald-700 mb-1">Platform Activity</p>
-              <p className="text-sm font-medium text-emerald-800">Users are actively redeeming credits for Mock Exams.</p>
+            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50 rounded-xl">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mb-1">Platform Activity</p>
+              <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Users are actively redeeming credits for Mock Exams.</p>
             </div>
-            <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-              <p className="text-xs text-blue-700 mb-1">Credit Circulation</p>
-              <p className="text-sm font-medium text-blue-800">{stats.totalCredits.toLocaleString()} credits in active circulation</p>
+            <div className="p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-xl">
+              <p className="text-xs text-blue-700 dark:text-blue-400 mb-1">Credit Circulation</p>
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">{stats.totalCredits.toLocaleString()} credits in active circulation</p>
             </div>
           </div>
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 className="font-bold text-slate-800 mb-5 flex items-center gap-2">
-            <BarChart2 size={18} className="text-blue-500" /> Content Distribution
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+          <h2 className="font-bold text-slate-800 dark:text-white mb-5 flex items-center gap-2">
+            <BarChart2 size={18} className="text-blue-500 dark:text-blue-400" /> Content Distribution
           </h2>
           <div className="space-y-3">
             {loading ? (
-              <div className="text-center py-8 text-slate-400">Loading...</div>
+              <div className="text-center py-8 text-slate-400 dark:text-slate-500">Loading...</div>
             ) : subjectDist.map((sub) => {
                 const pct = Math.round((sub.count / maxQCount) * 100);
                 const backgroundColor = extractBackgroundColor(sub.color);
                 return (
                   <div key={sub.name}>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="font-medium text-slate-700 capitalize">{sub.name}</span>
-                      <span className="font-bold text-slate-900">{sub.count} questions</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{sub.name}</span>
+                      <span className="font-bold text-slate-900 dark:text-white">{sub.count} questions</span>
                     </div>
-                    <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: backgroundColor }} />
                     </div>
                   </div>
@@ -189,29 +189,29 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="font-bold text-slate-800">Recent Onboarding</h2>
-          <Link href="/admin/dashboard/users" className="text-sm text-emerald-600 font-bold hover:underline">View All</Link>
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+          <h2 className="font-bold text-slate-800 dark:text-white">Recent Onboarding</h2>
+          <Link href="/admin/dashboard/users" className="text-sm text-emerald-600 dark:text-emerald-400 font-bold hover:underline">View All</Link>
         </div>
-        <div className="divide-y divide-slate-50">
+        <div className="divide-y divide-slate-50 dark:divide-slate-800">
           {loading ? (
-            <div className="px-6 py-8 text-center text-slate-400">Loading recent users...</div>
+            <div className="px-6 py-8 text-center text-slate-400 dark:text-slate-500">Loading recent users...</div>
           ) : recentUsers.map((u) => (
-              <div key={u.id || u._id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition">
+              <div key={u.id || u._id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center font-bold text-white shadow-md">
                   {(u.displayName || u.email || "?")[0].toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-900 truncate">{u.displayName || "New User"}</p>
-                  <p className="text-xs text-slate-500 truncate">{u.email}</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{u.displayName || "New User"}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{u.email}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
-                    <Coins size={12} className="text-amber-600" />
-                    <span className="text-xs font-bold text-amber-700">{u.credits || 0}</span>
+                  <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-full border border-amber-100 dark:border-amber-900/50">
+                    <Coins size={12} className="text-amber-600 dark:text-amber-400" />
+                    <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{u.credits || 0}</span>
                   </div>
-                  <span className="text-xs text-slate-400 hidden sm:block">{formatDate(u.createdAt)}</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">{formatDate(u.createdAt)}</span>
                 </div>
               </div>
           ))}
@@ -223,13 +223,13 @@ export default function AdminOverview() {
 
 function StatCard({ title, value, icon, color, loading, sub }: any) {
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+    <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
       <div>
-        <p className="text-xs font-medium text-slate-500 mb-1">{title}</p>
-        <h3 className="text-2xl font-bold text-slate-900">{loading ? "..." : value.toLocaleString()}</h3>
-        {sub && <p className="text-[10px] text-slate-400 mt-1">{sub}</p>}
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{title}</p>
+        <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{loading ? "..." : value.toLocaleString()}</h3>
+        {sub && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">{sub}</p>}
       </div>
-      <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-white ${color} shadow-lg shadow-gray-100`}>
+      <div className={`h-12 w-12 rounded-xl flex items-center justify-center text-white ${color} shadow-lg shadow-gray-100 dark:shadow-black/30`}>
         {icon}
       </div>
     </div>

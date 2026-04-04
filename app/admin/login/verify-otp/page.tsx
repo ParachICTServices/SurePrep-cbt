@@ -9,6 +9,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { apiClient } from "@/app/lib/api/apiClient";
 import { authService } from "@/app/lib/api/services/authService";
 import { isAdminUser } from "@/app/lib/auth/roles";
+import { ThemeToggle } from "@/app/components/theme-toggle";
 
 const OTP_LENGTH = 6;
 
@@ -110,24 +111,27 @@ function AdminVerifyOtpForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 px-4">
-      <div className="w-full max-w-md bg-slate-800 rounded-2xl border border-slate-700 p-8 shadow-2xl">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-900 px-4 py-8">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 shadow-xl dark:shadow-2xl">
         <Link
           href={`/admin/login?email=${encodeURIComponent(email)}`}
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to login
         </Link>
 
         <div className="text-center mb-8">
-          <div className="h-16 w-16 bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-600">
-            <ShieldCheck className="text-emerald-500" size={32} />
+          <div className="h-16 w-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-slate-600">
+            <ShieldCheck className="text-emerald-600 dark:text-emerald-500" size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-white">Enter sign-in code</h1>
-          <p className="text-slate-400 text-sm mt-2">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Enter sign-in code</h1>
+          <p className="text-slate-600 dark:text-slate-400 text-sm mt-2">
             We sent a {OTP_LENGTH}-digit code to{" "}
-            <span className="font-medium text-slate-300">{email}</span>
+            <span className="font-medium text-slate-800 dark:text-slate-300">{email}</span>
           </p>
         </div>
 
@@ -147,8 +151,8 @@ function AdminVerifyOtpForm() {
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 disabled={submitting}
-                className={`w-11 h-14 sm:w-12 text-center text-xl font-bold rounded-lg border-2 outline-none transition-all bg-slate-900 text-white
-                  ${digit ? "border-emerald-500 ring-2 ring-emerald-500/30" : "border-slate-600"}
+                className={`w-11 h-14 sm:w-12 text-center text-xl font-bold rounded-lg border-2 outline-none transition-all bg-white dark:bg-slate-900 text-slate-900 dark:text-white
+                  ${digit ? "border-emerald-500 ring-2 ring-emerald-500/30" : "border-slate-300 dark:border-slate-600"}
                   focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 disabled:opacity-50`}
                 aria-label={`Digit ${i + 1}`}
               />
@@ -158,17 +162,17 @@ function AdminVerifyOtpForm() {
           <button
             type="submit"
             disabled={!isComplete || submitting}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-400 dark:disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
           >
             {submitting ? <Loader2 className="animate-spin" /> : "Verify & continue"}
           </button>
         </form>
 
-        <p className="text-center text-slate-500 text-xs mt-6">
+        <p className="text-center text-slate-500 dark:text-slate-500 text-xs mt-6">
           Didn&apos;t get a code?{" "}
           <Link
             href={`/admin/login?email=${encodeURIComponent(email)}`}
-            className="text-emerald-400 hover:text-emerald-300 font-medium"
+            className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium"
           >
             Sign in again
           </Link>{" "}
@@ -183,7 +187,7 @@ export default function AdminVerifyOtpPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+        <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 text-slate-500">
           <Loader2 className="animate-spin" />
         </div>
       }
