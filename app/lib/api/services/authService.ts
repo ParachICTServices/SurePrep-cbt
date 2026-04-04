@@ -6,6 +6,11 @@ export interface LoginCredentials {
   password: string;
 }
 
+/** Step 1 of admin sign-in: sends OTP to email (no token yet). */
+export interface AdminLoginInitResponse {
+  message?: string;
+}
+
 function normalizeAuthResponse(raw: AuthResponse): AuthResponse {
   const accessToken = raw.accessToken ?? raw.token ?? '';
   return { ...raw, accessToken, user: raw.user };
@@ -19,6 +24,18 @@ export const authService = {
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
+    return normalizeAuthResponse(response);
+  },
+
+  async adminLogin(credentials: LoginCredentials): Promise<AdminLoginInitResponse> {
+    return apiClient.post<AdminLoginInitResponse>('/auth/admin/login', credentials);
+  },
+
+  async adminVerifyLoginOtp(body: { email: string; otp: string }): Promise<AuthResponse> {
+    const response = await apiClient.post<AuthResponse>(
+      '/auth/admin/verify-login-otp',
+      body
+    );
     return normalizeAuthResponse(response);
   },
 

@@ -1,18 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, LockIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/app/context/AuthContext";
 import { isAdminUser } from "@/app/lib/auth/roles";
+import { authService } from "@/app/lib/api/services/authService";
 
-export default function AdminLogin() {
+function AdminLoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const { login, user, loading: authLoading, clearLocalSession } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    const q = searchParams.get("email");
+    if (q) setEmail(q);
+  }, [searchParams]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -28,18 +35,17 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
-      const me = await login(email, password);
-      if (!isAdminUser(me)) {
-        clearLocalSession();
-        toast.error("This account is not authorized as an admin.");
-        return;
-      }
-      toast.success("Admin access granted.");
-      router.replace("/admin/dashboard");
+      const res = await authService.adminLogin({ email, password });
+      toast.success(
+        res.message ||
+          "Check your email for a 6-digit code to finish signing in."
+      );
+      router.push(
+        `/admin/login/verify-otp?email=${encodeURIComponent(email.trim())}`
+      );
     } catch (error: unknown) {
       toast.error(
-        "Admin login failed: " +
-          (error instanceof Error ? error.message : "Unknown error")
+        error instanceof Error ? error.message : "Admin login failed."
       );
     } finally {
       setLoading(false);
@@ -62,7 +68,9 @@ export default function AdminLogin() {
             <LockIcon className="text-emerald-500" size={32} />
           </div>
           <h1 className="text-2xl font-bold text-white">Admin Restricted Area</h1>
-          <p className="text-slate-400 text-sm mt-2">Authorized personnel only.</p>
+          <p className="text-slate-400 text-sm mt-2">
+            Sign in — we&apos;ll email you a one-time code.
+          </p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
@@ -98,7 +106,7 @@ export default function AdminLogin() {
             disabled={loading}
             className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg transition-all flex items-center justify-center shadow-lg shadow-emerald-900/20"
           >
-            {loading ? <Loader2 className="animate-spin" /> : "Authenticate Access"}
+            {loading ? <Loader2 className="animate-spin" /> : "Continue"}
           </button>
         </form>
 
@@ -107,5 +115,19 @@ export default function AdminLogin() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function AdminLogin() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-900 text-slate-400">
+          <Loader2 className="animate-spin" />
+        </div>
+      }
+    >
+      <AdminLoginForm />
+    </Suspense>
   );
 }

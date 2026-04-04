@@ -2,7 +2,7 @@
 import { useAuth } from "@/app/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, LayoutDashboard, FileText, Users, LogOut, ShieldCheck, Menu, X, BookOpen, LayoutGrid, Package } from "lucide-react";
+import { Loader2, LayoutDashboard, FileText, Users, LogOut, ShieldCheck, Menu, X, BookOpen, LayoutGrid, Package, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { isAdminUser } from "@/app/lib/auth/roles";
@@ -18,7 +18,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (loading) return;
 
     if (!user) {
-      if (pathname !== "/admin/login") router.push("/admin/login");
+      const isPublicAuth =
+        pathname === "/admin/login" ||
+        pathname === "/admin/login/verify-otp";
+      if (!isPublicAuth) router.push("/admin/login");
       return;
     }
 
@@ -45,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   };
 
-  if (pathname === "/admin/login") {
+  if (pathname === "/admin/login" || pathname === "/admin/login/verify-otp") {
     return <>{children}</>;
   }
 
@@ -136,6 +139,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             icon={<Package size={20} />} 
             label="Packages" 
             active={pathname.includes("/packages")} 
+          />
+          <NavLink
+            href="/admin/dashboard/payments"
+            icon={<CreditCard size={20} />}
+            label="Payments"
+            active={pathname.includes("/payments")}
           />
         </nav>
 
