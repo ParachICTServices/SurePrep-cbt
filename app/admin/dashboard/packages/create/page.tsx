@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { packageService, CreatePackageRequest } from '@/lib/api/services/packageService';
+import { packageService, CreatePackageRequest } from '@/app/lib/api/services/packageService';
 import { toast } from 'sonner';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';

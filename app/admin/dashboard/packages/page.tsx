@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Package, packageService } from '@/lib/api/services/packageService';
+import { Package, packageService } from '@/app/lib/api/services/packageService';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Package as PackageIcon } from 'lucide-react';
 import Link from 'next/link';
