@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { uploadToCloudinary } from "@/app/lib/imageUpload";
-import { PlusCircle, FileText, LayoutGrid, Loader2, Upload, FileUp, CheckCircle, AlertCircle, Beaker, Palette, Calculator, Globe, Image as ImageIcon, X, Tag } from "lucide-react";
+import { PlusCircle, FileText, LayoutGrid, Loader2, Upload, FileUp, CheckCircle, AlertCircle, Beaker, Palette, Calculator, Globe, Image as ImageIcon, X, Tag, Download } from "lucide-react";
 import { toast } from "sonner";
 import { MathText } from "@/app/components/MathText"; 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
@@ -47,6 +47,52 @@ function normalizeInlineMath(raw: string): string {
 
 function processMathInString(text: string): string {
   return text.replace(/\$([^$]+)\$/g, (_match, inner) => `$${normalizeInlineMath(inner)}$`);
+}
+
+/** Example payload for bulk JSON upload (replace subjectId and topic IDs with real values from your API). */
+const BULK_QUESTIONS_SAMPLE_JSON = `{
+  "subjectId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "questions": [
+    {
+      "questionText": "What is 2 + 2?",
+      "options": ["1", "2", "3", "4"],
+      "correctOption": 3,
+      "explanation": "2 + 2 equals 4.",
+      "imageURL": null,
+      "topics": ["Arithmetic"],
+      "difficulty": "easy"
+    },
+    {
+      "questionText": "The capital of Nigeria is:",
+      "options": ["Lagos", "Abuja", "Kano", "Port Harcourt"],
+      "correctOption": 1,
+      "explanation": "Abuja is the federal capital.",
+      "imageURL": null,
+      "topicIds": ["548b1d13-25e3-4986-ba9e-ea9da236ee6e"],
+      "difficulty": "medium"
+    },
+    {
+      "questionText": "Solve for x: 3x = 12",
+      "options": ["2", "3", "4", "6"],
+      "correctOption": 2,
+      "explanation": "x = 4",
+      "topics": ["Algebra", "Linear Equations"],
+      "difficulty": "easy"
+    }
+  ]
+}`;
+
+function downloadBulkQuestionsSample() {
+  const blob = new Blob([BULK_QUESTIONS_SAMPLE_JSON], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "bulk-questions-sample.json";
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function ContentManager() {
@@ -481,8 +527,18 @@ export default function ContentManager() {
                 <FileUp className="text-emerald-600" /> Bulk question upload (JSON)
               </h2>
               <p className="text-sm text-slate-500 mt-1">
-                Select a subject, then upload a single <code className="text-xs bg-slate-100 px-1 rounded">.json</code> file. The file is sent to the server for import.
+                Select a subject, then upload a single <code className="text-xs bg-slate-100 px-1 rounded">.json</code> file. The file is sent to the server for import. Questions may use{" "}
+                <code className="text-xs bg-slate-100 px-1 rounded">topics</code> (names) or{" "}
+                <code className="text-xs bg-slate-100 px-1 rounded">topicIds</code> (UUIDs).
               </p>
+              <button
+                type="button"
+                onClick={downloadBulkQuestionsSample}
+                className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
+              >
+                <Download size={18} />
+                Download sample JSON
+              </button>
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Subject</label>
