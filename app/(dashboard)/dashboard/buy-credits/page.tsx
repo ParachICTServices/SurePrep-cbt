@@ -81,7 +81,7 @@ export default function BuyCreditsPage() {
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY as string,
         email: user.email,
-        amount: selectedPackage.price * 100, // Convert to kobo
+        amount: selectedPackage.price * 100, // Convert Naira to kobo for Paystack
         currency: 'NGN',
         metadata: {
           custom_fields: [
@@ -203,7 +203,7 @@ export default function BuyCreditsPage() {
                 </div>
 
                 <div className="border-t border-white/20 pt-4">
-                  <p className="text-xl font-bold">₦{(pkg.price / 100).toLocaleString()}</p>
+                  <p className="text-xl font-bold">₦{pkg.price.toLocaleString()}</p>
                 </div>
               </button>
             );
@@ -223,7 +223,7 @@ export default function BuyCreditsPage() {
             </div>
             <div className="flex justify-between items-center text-lg font-bold">
               <span className="text-slate-900">Amount to Pay</span>
-              <span className="text-slate-900">₦{(selectedPackage.price / 100).toLocaleString()}</span>
+              <span className="text-slate-900">₦{selectedPackage.price.toLocaleString()}</span>
             </div>
           </div>
 

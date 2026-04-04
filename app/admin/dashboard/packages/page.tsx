@@ -50,7 +50,7 @@ export default function PackagesPage() {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
-    }).format(price / 100); // Assuming price is in kobo
+    }).format(price);
   };
 
   if (loading) {

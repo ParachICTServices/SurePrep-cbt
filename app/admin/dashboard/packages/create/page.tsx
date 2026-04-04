@@ -11,7 +11,6 @@ export default function CreatePackagePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CreatePackageRequest>({
-    id: '',
     name: '',
     credits: 0,
     bonus: 0,
@@ -20,11 +19,6 @@ export default function CreatePackagePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.id.trim()) {
-      toast.error('Package ID is required');
-      return;
-    }
     
     if (!formData.name.trim()) {
       toast.error('Package name is required');
@@ -66,7 +60,7 @@ export default function CreatePackagePage() {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
-    }).format(price / 100);
+    }).format(price);
   };
 
   return (
@@ -85,24 +79,6 @@ export default function CreatePackagePage() {
 
       <div className="max-w-2xl">
         <form onSubmit={handleSubmit} className="bg-slate-800 rounded-xl p-6 space-y-6">
-          <div>
-            <label htmlFor="id" className="block text-sm font-medium text-slate-300 mb-2">
-              Package ID *
-            </label>
-            <input
-              type="text"
-              id="id"
-              value={formData.id}
-              onChange={(e) => handleChange('id', e.target.value)}
-              placeholder="e.g., starter, premium, ultimate"
-              className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-              required
-            />
-            <p className="text-slate-400 text-sm mt-1">
-              Unique identifier for this package (lowercase, no spaces)
-            </p>
-          </div>
-
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
               Package Name *
@@ -153,23 +129,21 @@ export default function CreatePackagePage() {
 
           <div>
             <label htmlFor="price" className="block text-sm font-medium text-slate-300 mb-2">
-              Price (in kobo) *
+              Price (₦) *
             </label>
             <input
               type="number"
               id="price"
               value={formData.price || ''}
               onChange={(e) => handleChange('price', parseInt(e.target.value) || 0)}
-              placeholder="1000"
+              placeholder="10"
               min="1"
               className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               required
             />
-            {formData.price > 0 && (
-              <p className="text-slate-400 text-sm mt-1">
-                Display price: {formatPrice(formData.price)}
-              </p>
-            )}
+            <p className="text-slate-400 text-sm mt-1">
+              Enter price in Naira (e.g., 10 for ₦10)
+            </p>
           </div>
 
           {formData.credits > 0 && (

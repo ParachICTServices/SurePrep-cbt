@@ -89,7 +89,7 @@ export default function EditPackagePage() {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
-    }).format(price / 100);
+    }).format(price);
   };
 
   const hasChanges = () => {
@@ -196,23 +196,21 @@ export default function EditPackagePage() {
 
           <div>
             <label htmlFor="price" className="block text-sm font-medium text-slate-300 mb-2">
-              Price (in kobo) *
+              Price (₦) *
             </label>
             <input
               type="number"
               id="price"
               value={formData.price || ''}
               onChange={(e) => handleChange('price', parseInt(e.target.value) || 0)}
-              placeholder="1000"
+              placeholder="10"
               min="1"
               className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               required
             />
-            {formData.price && formData.price > 0 && (
-              <p className="text-slate-400 text-sm mt-1">
-                Display price: {formatPrice(formData.price)}
-              </p>
-            )}
+            <p className="text-slate-400 text-sm mt-1">
+              Enter price in Naira (e.g., 10 for ₦10)
+            </p>
           </div>
 
           {formData.credits && formData.credits > 0 && (

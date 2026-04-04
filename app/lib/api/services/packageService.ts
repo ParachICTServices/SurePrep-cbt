@@ -11,7 +11,6 @@ export interface Package {
 }
 
 export interface CreatePackageRequest {
-  id: string;
   name: string;
   credits: number;
   bonus: number;
