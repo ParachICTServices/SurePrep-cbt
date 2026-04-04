@@ -116,9 +116,7 @@ export default function PackagesPage() {
                     />
                     <PackageIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{pkg.name}</h3>
-                    <span className="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-1 rounded text-sm font-mono">
-                      {pkg.id}
-                    </span>
+                  
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     <div>
