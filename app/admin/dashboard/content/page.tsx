@@ -528,8 +528,6 @@ export default function ContentManager() {
               </h2>
               <p className="text-sm text-slate-500 mt-1">
                 Select a subject, then upload a single <code className="text-xs bg-slate-100 px-1 rounded">.json</code> file. The file is sent to the server for import. Questions may use{" "}
-                <code className="text-xs bg-slate-100 px-1 rounded">topics</code> (names) or{" "}
-                <code className="text-xs bg-slate-100 px-1 rounded">topicIds</code> (UUIDs).
               </p>
               <button
                 type="button"
