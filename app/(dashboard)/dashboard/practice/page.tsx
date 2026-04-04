@@ -7,8 +7,25 @@ import {
   GraduationCap, Briefcase, Globe, ChevronRight, Sparkles, School, Award, Coins, Settings, AlertCircle
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+
+/** Subject id sent in POST /credits/start-exam when starting a full exam simulation. */
+function resolveSubjectIdForExam(examId: string, subjects: Subject[]): string | null {
+  if (!subjects.length) return null;
+  if (examId === "general") {
+    const byCategory = subjects.find((s) => s.category === "general");
+    if (byCategory) return byCategory.id;
+    const byName = subjects.find((s) => /general/i.test(s.name));
+    return byName?.id ?? null;
+  }
+  if (examId === "jamb") {
+    const eng = subjects.find((s) => /english/i.test(s.name));
+    if (eng) return eng.id;
+  }
+  return subjects[0]?.id ?? null;
+}
 
 interface Subject {
   id: string;
@@ -211,9 +228,19 @@ export default function PracticeSelection() {
   const handleExamClick = (exam: (typeof ALL_EXAM_TYPES)[0]) => {
     if (userCredits < exam.creditCost) {
       router.push("/dashboard/buy-credits");
-    } else {
-      router.push(`/dashboard/start-exam?type=${exam.id}&cost=${exam.creditCost}`);
+      return;
     }
+    const subjectId = resolveSubjectIdForExam(exam.id, subjects);
+    if (!subjectId) {
+      toast.error("No subject is available to link this exam. Try again after subjects load.");
+      return;
+    }
+    const q = new URLSearchParams({
+      subjectId,
+      cost: String(exam.creditCost),
+      type: exam.id,
+    });
+    router.push(`/dashboard/start-exam?${q.toString()}`);
   };
 
   const handleSubjectClick = (subjectId: string) => {

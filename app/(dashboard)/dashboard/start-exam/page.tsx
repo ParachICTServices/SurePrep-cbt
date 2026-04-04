@@ -13,8 +13,9 @@ export default function StartExamPage() {
   
   const { user, loading: authLoading, refreshUser } = useAuth();
   
+  const subjectId = searchParams.get("subjectId");
   const examType = searchParams.get("type");
-  const cost = parseInt(searchParams.get("cost") || "0");
+  const cost = parseInt(searchParams.get("cost") || "0", 10);
   
   const [isDeducting, setIsDeducting] = useState(false);
 
@@ -95,60 +96,61 @@ export default function StartExamPage() {
   const ExamIcon = currentExam.icon;
 
   const handleConfirmStart = async () => {
-    if (!user) return;
-    
+    if (!user || !subjectId || !examType) return;
+
     if (user.credits < cost) {
       router.push("/dashboard/buy-credits");
       return;
     }
 
+    if (!API_BASE_URL) {
+      alert("Application is not configured (missing API URL).");
+      return;
+    }
+
     try {
       setIsDeducting(true);
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
 
-      const deductRes = await fetch(`${API_BASE_URL}/users/me/deduct-credits`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
+      const usageRes = await fetch(`${API_BASE_URL}/credits/start-exam`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ amount: cost }),
+        body: JSON.stringify({ subjectId }),
       });
 
-      if (!deductRes.ok) throw new Error("Deduction failed");
-
-      await fetch(`${API_BASE_URL}/credit-usage`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` 
-        },
-        body: JSON.stringify({
-          examType: examType,
-          examName: currentExam.name,
-          creditsSpent: cost,
-        }),
-      });
+      if (!usageRes.ok) {
+        const errBody = await usageRes.json().catch(() => ({}));
+        const msg =
+          typeof errBody?.message === "string"
+            ? errBody.message
+            : "Could not start exam. Check your credits and try again.";
+        throw new Error(msg);
+      }
 
       await refreshUser();
 
-      router.push(`/dashboard/mock?type=${examType}`);
-
+      router.push(`/dashboard/mock?type=${encodeURIComponent(examType)}`);
     } catch (error) {
       console.error("Failed to start exam:", error);
-      alert("Error processing credits. Please check your connection and try again.");
+      alert(error instanceof Error ? error.message : "Error processing request. Please try again.");
       setIsDeducting(false);
     }
   };
 
   if (authLoading) return <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;
 
-  if (!examType) {
+  if (!subjectId || !examType) {
     return (
       <div className="max-w-2xl mx-auto py-10 px-4">
         <div className="text-center py-20">
           <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Invalid Exam Type</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Invalid exam link</h2>
+          <p className="text-slate-600 mb-6 text-sm max-w-md mx-auto">
+            Start an exam from the Practice Centre so a subject is selected for billing.
+          </p>
           <Link href="/dashboard/practice" className="inline-block px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl">
             Back to Practice Centre
           </Link>
