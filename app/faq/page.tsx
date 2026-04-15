@@ -300,9 +300,7 @@ export default function FAQPage() {
           </Link>
           <p>&copy; {new Date().getFullYear()} Sure Prep. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-slate-600 dark:hover:text-slate-300">Privacy Policy</Link>
-            <Link href="#" className="hover:text-slate-600 dark:hover:text-slate-300">Terms of Service</Link>
-          </div>
+                    </div>
         </div>
       </footer>
     </div>

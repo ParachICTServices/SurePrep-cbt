@@ -594,6 +594,8 @@ export default function LandingPage() {
               <h4 className="font-bold text-slate-900 dark:text-white mb-6">Resources</h4>
               <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
                 <li><Link href="/faq" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">FAQs</Link></li>
+                <li><Link href="/about" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">About Us</Link></li>
+                
               </ul>
             </div>
 
@@ -601,9 +603,13 @@ export default function LandingPage() {
               <h4 className="font-bold text-slate-900 dark:text-white mb-6">Contact</h4>
               <ul className="space-y-4 text-sm text-slate-500 dark:text-slate-400">
                 
-                <li className="flex items-center gap-3">
-                  <Mail size={18} className="text-emerald-600 shrink-0" />
+                <li className="flex flex-col items-left gap-3">
+                 <div className="flex items-center gap-2">
+                   <Mail size={18} className="text-emerald-600 shrink-0" />
                   <span>sureprepcbt@gmail.com</span>
+                 </div>
+                  <li className='ml-7'><Link href="/contact" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Contact Us</Link></li>
+
                 </li>
               </ul>
             </div>
