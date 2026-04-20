@@ -16,7 +16,7 @@ import {
 } from "@/app/lib/subjectColor";
 
 const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com/api"
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
 ).replace(/\/$/, "");
 
 const defaultTopicRow = (): TopicRow => ({ id: "", name: "", cost: "500" });

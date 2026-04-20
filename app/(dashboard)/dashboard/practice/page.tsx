@@ -9,7 +9,9 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
+).replace(/\/$/, "");
 
 /** Subject id sent in POST /credits/start-exam when starting a full exam simulation. */
 function resolveSubjectIdForExam(examId: string, subjects: Subject[]): string | null {
@@ -178,8 +180,6 @@ export default function PracticeSelection() {
     
     const rawData = await response.json();
 
-    console.log("API RAW DATA:", rawData);
-
     let subjectsArray = [];
     
     if (Array.isArray(rawData)) {
@@ -192,26 +192,20 @@ export default function PracticeSelection() {
       subjectsArray = rawData.subjects;
     }
 
-    let filtered: Subject[] = subjectsArray.map((s: any) => ({
+    const allSubjects: Subject[] = subjectsArray.map((s: any) => ({
         id: s.id || s._id,
         name: s.name || "Unnamed Subject",
         category: s.category || 'general',
         color: s.color || 'bg-blue-100 text-blue-600'
     }));
 
-    if (userSpecialization && userSpecialization !== 'general') {
-        filtered = filtered.filter(s => 
-          s.category === userSpecialization || s.category === 'general'
-        );
-    }
-
-    filtered.sort((a, b) => {
+    allSubjects.sort((a, b) => {
       if (a.category === 'general' && b.category !== 'general') return -1;
       if (a.category !== 'general' && b.category === 'general') return 1;
       return a.name.localeCompare(b.name);
     });
 
-    setSubjects(filtered);
+    setSubjects(allSubjects);
     
   } catch (error) {
     console.error("❌ Error fetching subjects:", error);
