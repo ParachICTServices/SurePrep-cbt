@@ -14,6 +14,7 @@ import {
   topicsToApiPayload,
   type TopicRow,
 } from "@/app/lib/subjectColor";
+import { subjectService } from "@/app/lib/api/services/subjectService";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
@@ -66,11 +67,7 @@ export default function SubjectsManager() {
       if (!token) return;
 
       try {
-        const sRes = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const sRaw = await sRes.json();
-        const sData = Array.isArray(sRaw) ? sRaw : (sRaw.data || []);
+        const { data: sData } = await subjectService.getSubjectsPage({ page: 1, limit: 50 });
         
         const formatted = sData.map((s: any) => ({
             id: s.id || s._id,

@@ -23,6 +23,7 @@ import {
   Square,
   Trash
 } from "lucide-react";
+import { subjectService } from "@/app/lib/api/services/subjectService";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
@@ -95,11 +96,8 @@ export default function QuestionBank() {
     const fetchData = async () => {
       const token = localStorage.getItem('auth_token');
       try {
-        const sRes = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const sData = await sRes.json();
-        const subjectsArray = Array.isArray(sData) ? sData : (sData.data || []);
+        if (!token) return;
+        const { data: subjectsArray } = await subjectService.getSubjectsPage({ page: 1, limit: 50 });
         setSubjects(subjectsArray);
 
         

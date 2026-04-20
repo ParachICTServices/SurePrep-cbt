@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { subjectService } from "@/app/lib/api/services/subjectService";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
@@ -174,29 +175,13 @@ export default function PracticeSelection() {
   if (!token) return;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/subjects`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    const rawData = await response.json();
-
-    let subjectsArray = [];
-    
-    if (Array.isArray(rawData)) {
-      subjectsArray = rawData;
-    } else if (rawData.results && Array.isArray(rawData.results)) {
-      subjectsArray = rawData.results;
-    } else if (rawData.data && Array.isArray(rawData.data)) {
-      subjectsArray = rawData.data;
-    } else if (rawData.subjects && Array.isArray(rawData.subjects)) {
-      subjectsArray = rawData.subjects;
-    }
+    const subjectsArray = await subjectService.getAllSubjects({ limit: 50 });
 
     const allSubjects: Subject[] = subjectsArray.map((s: any) => ({
-        id: s.id || s._id,
-        name: s.name || "Unnamed Subject",
-        category: s.category || 'general',
-        color: s.color || 'bg-blue-100 text-blue-600'
+      id: s.id || s._id,
+      name: s.name || "Unnamed Subject",
+      category: s.category || "general",
+      color: s.color || "bg-blue-100 text-blue-600",
     }));
 
     allSubjects.sort((a, b) => {

@@ -5,6 +5,7 @@ import { uploadToCloudinary } from "@/app/lib/imageUpload";
 import { PlusCircle, FileText, LayoutGrid, Loader2, Upload, FileUp, CheckCircle, AlertCircle, Beaker, Palette, Calculator, Globe, Image as ImageIcon, X, Tag, Download } from "lucide-react";
 import { toast } from "sonner";
 import { MathText } from "@/app/components/MathText"; 
+import { subjectService } from "@/app/lib/api/services/subjectService";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 const SUBJECT_TOPICS: Record<string, string[]> = {
@@ -136,11 +137,8 @@ export default function ContentManager() {
     const fetchSubjects = async () => {
       const token = localStorage.getItem('auth_token');
       try {
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        const subjectsArray = Array.isArray(data) ? data : (data.data || []);
+        if (!token) return;
+        const { data: subjectsArray } = await subjectService.getSubjectsPage({ page: 1, limit: 50 });
         
         const formatted = subjectsArray.map((s: any) => {
             const slug = s.slug || (s.name ? s.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and') : '');

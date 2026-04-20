@@ -5,6 +5,7 @@ import {
   BarChart2, ArrowUpRight, RefreshCw
 } from "lucide-react";
 import Link from "next/link";
+import { subjectService } from "@/app/lib/api/services/subjectService";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
@@ -58,9 +59,7 @@ export default function AdminOverview() {
       })).sort((a: any, b: any) => b.count - a.count);
 
       if (formattedDist.length === 0 || formattedDist.every((s: {count:number}) => s.count === 0)) {
-        const subjectsRes = await fetch(`${API_BASE_URL}/subjects`, { headers: { 'Authorization': `Bearer ${token}` }});
-        const subjectsData = await subjectsRes.json();
-        const subjectsArray = Array.isArray(subjectsData) ? subjectsData : (subjectsData.data || []);
+        const { data: subjectsArray } = await subjectService.getSubjectsPage({ page: 1, limit: 50 });
         const fallbackDist: {name:string; count:number; color:string}[] = subjectsArray.map((s: any) => ({
           name: s.name,
           count: Number(s.questionCount ?? s.totalQuestions ?? s.questions ?? s.count ?? 0),

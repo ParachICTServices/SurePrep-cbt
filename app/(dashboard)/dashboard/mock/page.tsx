@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { Loader2, CheckCircle, AlertCircle, Play, GraduationCap, BookOpen, Sparkles, Briefcase, Globe, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { subjectService } from "@/app/lib/api/services/subjectService";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
@@ -32,11 +33,8 @@ function MockSetupInner() {
     const fetchSubs = async () => {
       const token = localStorage.getItem('auth_token');
       try {
-        const res = await fetch(`${API_BASE_URL}/subjects`, {
-           headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        const subjectsArray = Array.isArray(data) ? data : (data.data || []);
+        if (!token) return;
+        const { data: subjectsArray } = await subjectService.getSubjectsPage({ page: 1, limit: 50 });
         
         const formatted = subjectsArray.map((s: any) => ({
             id: s.id || s._id,
