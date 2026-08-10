@@ -12,7 +12,7 @@ const faqs = [
     questions: [
       {
         q: "Is Sure Prep free to use?",
-        a: "Creating an account is free. To take tests, you purchase credits — each test costs a set amount of credits depending on the exam type. You only pay for what you actually use, and credits never expire, so there's no subscription pressure."
+        a: "Yes — core CBT practice is free for all registered users. Premium add-ons and credit-based features are coming soon as optional upgrades."
       },
       {
         q: "What exams does Sure Prep cover?",
@@ -50,11 +50,11 @@ const faqs = [
     questions: [
       {
         q: "How does the credit system work?",
-        a: "Credits are what you use to take tests on Sure Prep. Each exam or mock test costs a set number of credits. You buy credits in bundles, use them when you're ready, and they don't expire — so there's no pressure to rush through them."
+        a: "Credits and premium packs are currently disabled while we offer the core CBT experience for free. When premium packs return, you'll be able to purchase credits to access extra features."
       },
       {
         q: "How do I buy credits?",
-        a: "Go to your dashboard and tap 'Buy Credits'. We support payment via card and bank transfer. Credits are added to your account instantly once payment is confirmed — no waiting, no manual approval."
+        a: "Credit purchases are temporarily unavailable. Visit the dashboard later — premium packs will be announced with a 'Coming Soon' label." 
       },
       {
         q: "How many credits does a test cost?",

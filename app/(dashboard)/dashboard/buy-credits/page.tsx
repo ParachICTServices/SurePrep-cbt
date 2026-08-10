@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/api/services/packageService";
 import { Coins, Zap, Star, Crown, CheckCircle, Loader2, TrendingUp, Package as PackageIcon } from "lucide-react";
 import { toast } from "sonner";
+import ComingSoon from "@/app/components/ComingSoon";
 
 
 // Icon and color mapping for packages
@@ -52,62 +53,9 @@ export default function BuyCreditsPage() {
     }
   };
 
+  // Payment flows are disabled temporarily. Show Coming Soon instead.
   const handlePurchase = async () => {
-    if (!user) {
-      toast.error("Please login to purchase credits");
-      return;
-    }
-
-    if (!selectedPackage) {
-      toast.error("Please select a package");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const PaystackPop = (await import("@paystack/inline-js")).default;
-      const paystack = new PaystackPop();
-      
-      paystack.newTransaction({
-        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY as string,
-        email: user.email,
-        amount: selectedPackage.price * 100, // Convert Naira to kobo for Paystack
-        currency: 'NGN',
-        metadata: {
-          custom_fields: [
-            { display_name: "User ID", variable_name: "user_id", value: user.id },
-            { display_name: "Package", variable_name: "package", value: selectedPackage.id }
-          ]
-        },
-        onSuccess: async (transaction: any) => {
-          try {
-            toast.loading("Verifying payment...");
-
-            await userService.verifyPayment(transaction.reference, selectedPackage.id);
-
-            toast.dismiss();
-            toast.success(`Purchase successful! Credits added to your account. 🎉`);
-            
-            await refreshUser();
-            setLoading(false);
-            
-          } catch (error: any) {
-            console.error("Verification error:", error);
-            toast.error(error.message || "Payment verification failed. Please contact support.");
-            setLoading(false);
-          }
-        },
-        onCancel: () => {
-          setLoading(false);
-          toast.error("Transaction cancelled.");
-        }
-      });
-    } catch (error) {
-      console.error("Payment initialization error:", error);
-      toast.error("Error starting payment. Check your internet connection.");
-      setLoading(false);
-    }
+    toast.info('Purchases are disabled — premium features coming soon.');
   };
 
   return (
@@ -204,29 +152,8 @@ export default function BuyCreditsPage() {
 
       {/* Purchase Summary */}
       {selectedPackage && (
-        <div className="bg-white dark:bg-slate-800/80 rounded-2xl border-2 border-slate-200 dark:border-slate-700 p-8">
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Summary</h3>
-
-          <div className="space-y-4 mb-8">
-            <div className="flex justify-between items-center text-lg font-bold">
-              <span className="text-slate-900 dark:text-slate-100">Total Credits</span>
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {selectedPackage.credits + selectedPackage.bonus}
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-lg font-bold">
-              <span className="text-slate-900 dark:text-slate-100">Amount to Pay</span>
-              <span className="text-slate-900 dark:text-slate-100">₦{selectedPackage.price.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handlePurchase}
-            disabled={loading || packagesLoading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-3 text-lg"
-          >
-            {loading ? <Loader2 className="animate-spin" /> : "Pay Now & Get Credits"}
-          </button>
+        <div>
+          <ComingSoon title="Credits & Premium Packs" description="Purchases and premium packs are temporarily disabled. Credits will be available soon." />
         </div>
       )}
     </div>

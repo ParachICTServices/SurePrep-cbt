@@ -87,8 +87,8 @@ export default function DashboardOverview() {
             Hello, <span className="text-emerald-600">{user?.displayName || "Scholar"}</span>! 🚀
           </h1>
           <p className="text-slate-500 max-w-md mb-6">
-            You are preparing for <span className="font-bold text-slate-700">{categoryNames[user?.examCategory as keyof typeof categoryNames] || "your exams"}</span>. 
-            You currently have <span className="text-emerald-600 font-bold">{user?.credits || 0} credits</span> available.
+            Your CBT practice is free for registered users. Start practicing with your account — no subscription required.
+            <br /> You are preparing for <span className="font-bold text-slate-700">{categoryNames[user?.examCategory as keyof typeof categoryNames] || "your exams"}</span>.
           </p>
           
           <div className="flex flex-wrap gap-4">

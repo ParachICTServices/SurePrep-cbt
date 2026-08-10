@@ -226,10 +226,7 @@ export default function PracticeSelection() {
   }, [user, authLoading, userSpecialization]);
 
   const handleExamClick = (exam: (typeof ALL_EXAM_TYPES)[0]) => {
-    if (userCredits < exam.creditCost) {
-      router.push("/dashboard/buy-credits");
-      return;
-    }
+    // Allow access to exams for all registered users (free experience)
     const subjectId = resolveSubjectIdForExam(exam.id, subjects);
     if (!subjectId) {
       toast.error("No subject is available to link this exam. Try again after subjects load.");
@@ -244,12 +241,8 @@ export default function PracticeSelection() {
   };
 
   const handleSubjectClick = (subjectId: string) => {
-    const subjectCost = 5;
-    if (userCredits < subjectCost) {
-      router.push("/dashboard/buy-credits");
-    } else {
-       router.push(`/dashboard/practice/${subjectId}/topics`);
-    }
+    // Allow subject practice without requiring credits
+    router.push(`/dashboard/practice/${subjectId}/topics`);
   };
 
   if (authLoading || loading)

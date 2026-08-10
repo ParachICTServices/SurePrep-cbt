@@ -97,47 +97,8 @@ export default function StartExamPage() {
 
   const handleConfirmStart = async () => {
     if (!user || !subjectId || !examType) return;
-
-    if (user.credits < cost) {
-      router.push("/dashboard/buy-credits");
-      return;
-    }
-
-    if (!API_BASE_URL) {
-      alert("Application is not configured (missing API URL).");
-      return;
-    }
-
-    try {
-      setIsDeducting(true);
-      const token = localStorage.getItem("auth_token");
-
-      const usageRes = await fetch(`${API_BASE_URL}/credits/start-exam`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ subjectId }),
-      });
-
-      if (!usageRes.ok) {
-        const errBody = await usageRes.json().catch(() => ({}));
-        const msg =
-          typeof errBody?.message === "string"
-            ? errBody.message
-            : "Could not start exam. Check your credits and try again.";
-        throw new Error(msg);
-      }
-
-      await refreshUser();
-
-      router.push(`/dashboard/mock?type=${encodeURIComponent(examType)}`);
-    } catch (error) {
-      console.error("Failed to start exam:", error);
-      alert(error instanceof Error ? error.message : "Error processing request. Please try again.");
-      setIsDeducting(false);
-    }
+    // For free experience, skip credit deduction and start exam directly.
+    router.push(`/dashboard/mock/play?subs=${encodeURIComponent(subjectId)}&type=${encodeURIComponent(examType)}`);
   };
 
   if (authLoading) return <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-emerald-600" /></div>;

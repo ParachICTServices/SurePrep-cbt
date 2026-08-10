@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, CheckCircle, Zap, Shield, Star, Lock, GraduationCap, Briefcase, School, Coins, TrendingUp, Beaker, Palette, Calculator, Mail, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/app/components/theme-toggle";
+import ComingSoon from "@/app/components/ComingSoon";
 
 
 
@@ -261,7 +262,8 @@ const handleVerifyOTP = async () => {
     }
     
     toast.success("Email verified successfully! 🎉");
-    setStep('plan');
+    // Skip purchase/plan step — auto-login and go to dashboard for free access
+    await handleFreePlan();
   } catch (error: any) {
     toast.error(error.message);
   } finally {
@@ -294,7 +296,8 @@ const handleVerifyOTP = async () => {
       
       if (data.emailVerified || data.verified) {
         toast.success("Email verified successfully! 🎉");
-        setStep('plan');
+        // Skip plan selection: auto-login for free access
+        await handleFreePlan();
       } else {
         toast.error("Email not verified yet. Please check your inbox and click the verification link first.");
       }
@@ -678,93 +681,15 @@ const handleVerifyOTP = async () => {
   </div>
 )}
 
-       {/* STEP 4: CREDIT PACKAGE SELECTION */}
-{step === 'plan' && (
-  <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-right-8 duration-500">
-    <div className="text-center mb-10">
-      <div className="inline-flex items-center gap-2 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 px-4 py-2 rounded-full text-sm font-bold mb-4">
-        <Star size={16} fill="currentColor" /> Email Verified Successfully!
-      </div>
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Choose a Starting Credit Pack</h2>
-      <p className="text-slate-500 dark:text-slate-400">Credits are used to take exams. Select a pack to get started.</p>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-      {STARTER_CREDIT_PACKAGES.map((pkg) => (
-        <button
-          key={pkg.id}
-          onClick={() => setSelectedPackage(pkg)}
-          className={`
-            relative p-6 rounded-3xl border-2 transition-all text-left flex flex-col h-full
-            ${selectedPackage.id === pkg.id 
-              ? 'border-emerald-500 bg-white dark:bg-slate-900 shadow-xl scale-105 ring-4 ring-emerald-50 dark:ring-emerald-950/50' 
-              : 'border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 hover:border-slate-300 dark:hover:border-slate-600'}
-          `}
-        >
-          {pkg.popular && (
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
-              Recommended
-            </span>
-          )}
-
-          <div className="mb-4">
-            <h4 className="font-bold text-slate-900 dark:text-white text-lg">{pkg.name}</h4>
-            <div className="flex items-baseline gap-1 mt-2">
-              <span className="text-3xl font-black text-slate-900 dark:text-white">
-                {pkg.isFree ? "Free" : `₦${pkg.price.toLocaleString()}`}
-              </span>
-            </div>
+      {/* STEP 4: CREDIT PACKAGE SELECTION */}
+      {step === 'plan' && (
+        <div className="max-w-2xl mx-auto">
+          <ComingSoon title="Credits & Premium Packs" description="Credit purchases are temporarily disabled. Enjoy free access to core CBT features." />
+          <div className="mt-6 flex justify-center">
+            <button onClick={handleFreePlan} className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold">Go to Dashboard</button>
           </div>
-
-          <div className="space-y-3 mb-8 flex-grow">
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-              <Coins size={16} className="text-emerald-500 dark:text-emerald-400" />
-              <span className="font-bold text-slate-900 dark:text-white">{pkg.credits} Credits</span>
-            </div>
-            {pkg.bonus > 0 && (
-              <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400 font-bold">
-                <Zap size={16} />
-                <span>+{pkg.bonus} Bonus Credits</span>
-              </div>
-            )}
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{pkg.description}</p>
-          </div>
-
-          <div className={`
-            w-full py-3 rounded-xl font-bold text-center transition-colors
-            ${selectedPackage.id === pkg.id 
-              ? 'bg-emerald-600 text-white' 
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}
-          `}>
-            {selectedPackage.id === pkg.id ? 'Selected' : 'Choose Plan'}
-          </div>
-        </button>
-      ))}
-    </div>
-
-    <div className="max-w-md mx-auto">
-      <button
-        onClick={handlePurchaseCredits}
-        disabled={loading}
-        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl transition flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 dark:shadow-emerald-900/30 disabled:bg-emerald-400 text-lg"
-      >
-        {loading ? (
-          <Loader2 className="animate-spin" />
-        ) : selectedPackage.isFree ? (
-          "Go to Dashboard"
-        ) : (
-          <>
-            <Shield size={20} />
-            Pay ₦{selectedPackage.price.toLocaleString()} & Get Credits
-          </>
-        )}
-      </button>
-      <p className="text-center text-slate-400 dark:text-slate-500 text-xs mt-4">
-        Secure payment powered by Paystack. Credits are added instantly.
-      </p>
-    </div>
-  </div>
-)}
+        </div>
+      )}
 
       </div>
     </div>
