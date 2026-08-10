@@ -8,8 +8,11 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { subjectService } from "@/app/lib/api/services/subjectService";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
+).replace(/\/$/, "");
 
 /** Subject id sent in POST /credits/start-exam when starting a full exam simulation. */
 function resolveSubjectIdForExam(examId: string, subjects: Subject[]): string | null {
@@ -172,46 +175,22 @@ export default function PracticeSelection() {
   if (!token) return;
   
   try {
-    const response = await fetch(`${API_BASE_URL}/subjects`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    
-    const rawData = await response.json();
+    const subjectsArray = await subjectService.getAllSubjects({ limit: 50 });
 
-    console.log("API RAW DATA:", rawData);
-
-    let subjectsArray = [];
-    
-    if (Array.isArray(rawData)) {
-      subjectsArray = rawData;
-    } else if (rawData.results && Array.isArray(rawData.results)) {
-      subjectsArray = rawData.results;
-    } else if (rawData.data && Array.isArray(rawData.data)) {
-      subjectsArray = rawData.data;
-    } else if (rawData.subjects && Array.isArray(rawData.subjects)) {
-      subjectsArray = rawData.subjects;
-    }
-
-    let filtered: Subject[] = subjectsArray.map((s: any) => ({
-        id: s.id || s._id,
-        name: s.name || "Unnamed Subject",
-        category: s.category || 'general',
-        color: s.color || 'bg-blue-100 text-blue-600'
+    const allSubjects: Subject[] = subjectsArray.map((s: any) => ({
+      id: s.id || s._id,
+      name: s.name || "Unnamed Subject",
+      category: s.category || "general",
+      color: s.color || "bg-blue-100 text-blue-600",
     }));
 
-    if (userSpecialization && userSpecialization !== 'general') {
-        filtered = filtered.filter(s => 
-          s.category === userSpecialization || s.category === 'general'
-        );
-    }
-
-    filtered.sort((a, b) => {
+    allSubjects.sort((a, b) => {
       if (a.category === 'general' && b.category !== 'general') return -1;
       if (a.category !== 'general' && b.category === 'general') return 1;
       return a.name.localeCompare(b.name);
     });
 
-    setSubjects(filtered);
+    setSubjects(allSubjects);
     
   } catch (error) {
     console.error("❌ Error fetching subjects:", error);

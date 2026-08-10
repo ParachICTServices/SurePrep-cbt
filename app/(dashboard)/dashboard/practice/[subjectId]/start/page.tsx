@@ -7,7 +7,9 @@ import { Loader2, BookOpen, ShieldCheck, AlertCircle, ArrowLeft, Coins } from "l
 import Link from "next/link";
 import toast from "react-hot-toast";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
+).replace(/\/$/, "");
 
 export default function StartSubjectPracticePage() {
   const params = useParams();
@@ -55,6 +57,7 @@ setIsDeducting(true);
 
     try {
       const token = localStorage.getItem("auth_token");
+      const topicForCredits = topicFilter ? (topicName || topicFilter) : "all-topics";
 
       const response = await fetch(`${API_BASE_URL}/credits/open-subject-topic`, {
         method: "POST",
@@ -64,7 +67,8 @@ setIsDeducting(true);
         },
         body: JSON.stringify({
           subjectId: subjectId,
-          topic: topicFilter ?? "all-topics",
+          // API expects the catalog topic name (text), not the topic UUID.
+          topic: topicForCredits,
         }),
       });
 

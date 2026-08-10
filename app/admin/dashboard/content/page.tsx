@@ -5,7 +5,11 @@ import { uploadToCloudinary } from "@/app/lib/imageUpload";
 import { PlusCircle, FileText, LayoutGrid, Loader2, Upload, FileUp, CheckCircle, AlertCircle, Beaker, Palette, Calculator, Globe, Image as ImageIcon, X, Tag, Download } from "lucide-react";
 import { toast } from "sonner";
 import { MathText } from "@/app/components/MathText"; 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+import { subjectService } from "@/app/lib/api/services/subjectService";
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com").replace(
+  /\/$/,
+  ""
+);
 
 const SUBJECT_TOPICS: Record<string, string[]> = {
   mathematics: ['Algebra', 'Calculus', 'Trigonometry', 'Statistics & Probability', 'Geometry', 'Vectors & Mechanics', 'Number Theory', 'Logarithms'],
@@ -136,11 +140,8 @@ export default function ContentManager() {
     const fetchSubjects = async () => {
       const token = localStorage.getItem('auth_token');
       try {
-        const response = await fetch(`${API_BASE_URL}/subjects`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        const subjectsArray = Array.isArray(data) ? data : (data.data || []);
+        if (!token) return;
+        const { data: subjectsArray } = await subjectService.getSubjectsPage({ page: 1, limit: 50 });
         
         const formatted = subjectsArray.map((s: any) => {
             const slug = s.slug || (s.name ? s.name.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and') : '');
@@ -306,30 +307,22 @@ export default function ContentManager() {
   };
 
   const handleJsonBulkUpload = async () => {
-    if (!bulkSubject) {
-      toast.error("Please select a subject.");
-      return;
-    }
     if (!bulkJsonFile) {
       toast.error("Choose a JSON file to upload.");
       return;
     }
     if (bulkJsonError) return;
-    if (!API_BASE_URL) {
-      toast.error("API is not configured.");
-      return;
-    }
 
     setLoading(true);
     const token = localStorage.getItem("auth_token");
     try {
       const formData = new FormData();
       formData.append("file", bulkJsonFile);
-      formData.append("subjectId", bulkSubject);
 
-      const response = await fetch(`${API_BASE_URL}/admin/upload-file`, {
+      const response = await fetch(`${API_BASE_URL}/admin/upload-question-bank`, {
         method: "POST",
         headers: {
+          Accept: "*/*",
           Authorization: `Bearer ${token}`,
         },
         body: formData,
@@ -527,7 +520,9 @@ export default function ContentManager() {
                 <FileUp className="text-emerald-600" /> Bulk question upload (JSON)
               </h2>
               <p className="text-sm text-slate-500 mt-1">
-                Select a subject, then upload a single <code className="text-xs bg-slate-100 px-1 rounded">.json</code> file. The file is sent to the server for import. Questions may use{" "}
+                Upload a single <code className="text-xs bg-slate-100 px-1 rounded">.json</code> file. The file is sent to the server for import. It should include a{" "}
+                <code className="text-xs bg-slate-100 px-1 rounded">subjectId</code> and a{" "}
+                <code className="text-xs bg-slate-100 px-1 rounded">questions</code> array. Questions may use{" "}
               </p>
               <button
                 type="button"
@@ -606,11 +601,11 @@ export default function ContentManager() {
             <button
               type="button"
               onClick={handleJsonBulkUpload}
-              disabled={loading || !bulkJsonFile || !!bulkJsonError || !bulkSubject}
+              disabled={loading || !bulkJsonFile || !!bulkJsonError}
               className="w-full px-8 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="animate-spin" /> : <Upload size={20} />}
-              {loading ? "Uploading…" : "Upload to subject"}
+              {loading ? "Uploading…" : "Upload question bank"}
             </button>
           </div>
         )}
