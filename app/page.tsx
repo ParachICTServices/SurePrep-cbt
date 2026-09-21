@@ -608,9 +608,8 @@ export default function LandingPage() {
                    <Mail size={18} className="text-emerald-600 shrink-0" />
                   <span>sureprepcbt@gmail.com</span>
                  </div>
-                  <li className='ml-7'><Link href="/contact" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Contact Us</Link></li>
-
                 </li>
+                <li className="ml-7"><Link href="/contact" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Contact Us</Link></li>
               </ul>
             </div>
           </div>

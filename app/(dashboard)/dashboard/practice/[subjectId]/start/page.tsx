@@ -2,42 +2,43 @@
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/app/context/AuthContext";
-import { userService } from "@/app/lib/api/services/userService";
+import { FREE_QUESTION_LIMIT } from "@/app/lib/questionAccess";
 import { Loader2, BookOpen, ShieldCheck, AlertCircle, ArrowLeft, Coins } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
-).replace(/\/$/, "");
+import { subjectService } from "@/app/lib/api/services/subjectService";
+import { examService } from "@/app/lib/api/services/examService";
 
 export default function StartSubjectPracticePage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const topicFilter = searchParams.get("topic");
   const topicName = searchParams.get("topicName") || "";
+  const examType = searchParams.get("examType") || "jamb";
   const router = useRouter();
 
-  const { user, loading: authLoading, refreshUser } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const subjectId = params.subjectId as string;
-  const cost = parseInt(searchParams.get("cost") || "5");
 
   const [isDeducting, setIsDeducting] = useState(false);
   const [subjectName, setSubjectName] = useState("Subject Practice");
   const [loading, setLoading] = useState(true);
+  const [completedQuestions, setCompletedQuestions] = useState(0);
 
   useEffect(() => {
     const fetchSubjectName = async () => {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
-
       try {
-        const res = await fetch(`${API_BASE_URL}/subjects/${subjectId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        setSubjectName(data.name || "Subject Practice");
+        const [subject, results] = await Promise.all([
+          subjectService.getSubject(subjectId),
+          examService.getTestResults({ type: "practice", limit: 1000 }),
+        ]);
+        setSubjectName(subject.name || "Subject Practice");
+        const questionIds = results
+          .filter((result) => result.subjectId === subjectId)
+          .flatMap((result) => (result.history || []).map((question) => question.questionId))
+          .filter((questionId): questionId is string => Boolean(questionId));
+        setCompletedQuestions(new Set(questionIds).size);
       } catch (error) {
         console.error("Error fetching subject:", error);
       } finally {
@@ -53,40 +54,17 @@ export default function StartSubjectPracticePage() {
   const handleConfirmStart = async () => {
     if (!user) return;
 
-setIsDeducting(true);
+    setIsDeducting(true);
 
     try {
-      const token = localStorage.getItem("auth_token");
-      const topicForCredits = topicFilter ? (topicName || topicFilter) : "all-topics";
-
-      const response = await fetch(`${API_BASE_URL}/credits/open-subject-topic`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          subjectId: subjectId,
-          // API expects the catalog topic name (text), not the topic UUID.
-          topic: topicForCredits,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Insufficient credits or invalid session");
-      }
-
-      await refreshUser();
-
       const destination = topicFilter
-        ? `/dashboard/practice/${subjectId}/exam?topic=${encodeURIComponent(topicFilter)}`
-        : `/dashboard/practice/${subjectId}/exam`;
+        ? `/dashboard/practice/${subjectId}/exam?examType=${encodeURIComponent(examType)}&topic=${encodeURIComponent(topicFilter)}`
+        : `/dashboard/practice/${subjectId}/exam?examType=${encodeURIComponent(examType)}`;
 
       router.push(destination);
-    } catch (error: any) {
-      toast.error(error.message);
-setIsDeducting(false);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Unable to start practice session.");
+      setIsDeducting(false);
     }
   };
 
@@ -99,7 +77,6 @@ setIsDeducting(false);
   }
 
   const currentCredits = user?.credits || 0;
-  const canAfford = currentCredits >= cost;
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
@@ -126,24 +103,21 @@ setIsDeducting(false);
 
         <div className="p-8">
           <div className="space-y-6">
-            {/* Credit Breakdown */}
-            <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
+            <div className="bg-slate-50 rounded-2xl p-6 space-y-2">
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Access</span>
+                <span className="font-bold text-emerald-600">Free for registered users</span>
+              </div>
               <div className="flex justify-between items-center text-slate-600">
                 <span>Current Balance</span>
                 <span className="font-bold flex items-center gap-1">
                   <Coins size={16} /> {currentCredits.toLocaleString()}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-red-600">
-                <span>Session Cost</span>
-                <span className="font-bold flex items-center gap-1">
-                  - <Coins size={16} /> {cost}
-                </span>
-              </div>
-              <div className="pt-4 border-t border-slate-200 flex justify-between items-center text-slate-900 font-bold text-lg">
-                <span>Remaining Balance</span>
-                <span className="text-emerald-600 flex items-center gap-1">
-                  <Coins size={20} /> {(currentCredits - cost).toLocaleString()}
+              <div className="flex justify-between items-center text-slate-600 pt-2 border-t border-slate-200">
+                <span>Free Questions Completed</span>
+                <span className="font-bold text-slate-900">
+                  {Math.min(completedQuestions, FREE_QUESTION_LIMIT)} / {FREE_QUESTION_LIMIT}
                 </span>
               </div>
             </div>
@@ -159,12 +133,16 @@ setIsDeducting(false);
 
             <div className="flex gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-sm">
               <AlertCircle className="flex-shrink-0" size={20} />
-              <p>Credits are non-refundable once the session begins.</p>
+              <p>
+                {completedQuestions >= FREE_QUESTION_LIMIT
+                  ? "You've completed the 100 free practice questions for this subject. Unlock more questions to continue."
+                  : "Practice sessions are free. You can start whenever you are ready."}
+              </p>
             </div>
 
             <button
               onClick={handleConfirmStart}
-              disabled={isDeducting || !canAfford}
+              disabled={isDeducting}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-lg"
             >
               {isDeducting ? (
@@ -175,16 +153,12 @@ setIsDeducting(false);
               ) : (
                 <>
                   <ShieldCheck size={22} />
-                  Confirm & Start
+                  {completedQuestions >= FREE_QUESTION_LIMIT ? "Continue Practicing" : "Confirm & Start"}
                 </>
               )}
             </button>
 
-            {!canAfford && (
-              <p className="text-center text-red-500 font-medium text-sm">
-                Insufficient credits. Please top up.
-              </p>
-            )}
+
           </div>
         </div>
       </div>

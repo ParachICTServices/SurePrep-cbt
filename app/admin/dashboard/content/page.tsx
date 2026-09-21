@@ -6,26 +6,13 @@ import { PlusCircle, FileText, LayoutGrid, Loader2, Upload, FileUp, CheckCircle,
 import { toast } from "sonner";
 import { MathText } from "@/app/components/MathText"; 
 import { subjectService } from "@/app/lib/api/services/subjectService";
+import { contentService } from "@/app/lib/api/services/contentService";
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com").replace(
   /\/$/,
   ""
 );
 
-const SUBJECT_TOPICS: Record<string, string[]> = {
-  mathematics: ['Algebra', 'Calculus', 'Trigonometry', 'Statistics & Probability', 'Geometry', 'Vectors & Mechanics', 'Number Theory', 'Logarithms'],
-  physics: ['Mechanics', 'Electricity & Magnetism', 'Waves & Sound', 'Light & Optics', 'Heat & Thermodynamics', 'Modern Physics', 'Atomic Structure'],
-  chemistry: ['Organic Chemistry', 'Inorganic Chemistry', 'Physical Chemistry', 'Chemical Bonding', 'Acids & Bases', 'Electrochemistry', 'Periodic Table', 'Stoichiometry'],
-  biology: ['Cell Biology', 'Genetics & Evolution', 'Ecology', 'Human Anatomy', 'Plant Biology', 'Microbiology', 'Reproduction'],
-  english: ['Oral English', 'Comprehension', 'Grammar', 'Vocabulary', 'Literature', 'Essay Writing', 'Lexis & Structure'],
-  literature: ['Poetry', 'Drama', 'Prose', 'African Literature', 'Literary Devices'],
-  government: ['Nigerian Government', 'International Relations', 'Political Systems', 'Democracy', 'Federalism'],
-  economics: ['Microeconomics', 'Macroeconomics', 'International Trade', 'Money & Banking', 'Development Economics'],
-  accounting: ['Book Keeping', 'Financial Accounting', 'Cost Accounting', 'Partnership Accounts'],
-  commerce: ['Trade', 'Banking', 'Insurance', 'Business Organization'],
-};
-
 function formatTopicId(topic: string): string { return topic.toLowerCase().replace(/\s+/g, '-').replace(/&/g, 'and'); }
-function getTopicsForSubject(subjectId: string): string[] { return SUBJECT_TOPICS[subjectId.toLowerCase()] || []; }
 
 function normalizeInlineMath(raw: string): string {
   return raw
@@ -112,6 +99,7 @@ export default function ContentManager() {
 
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedSubjectSlug, setSelectedSubjectSlug] = useState("");
+  const [selectedExamType, setSelectedExamType] = useState("jamb");
   const [qText, setQText] = useState("");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [correctOpt, setCorrectOpt] = useState(0);
@@ -130,11 +118,20 @@ export default function ContentManager() {
   const bulkJsonInputRef = useRef<HTMLInputElement>(null);
 
   const selectedSubjectData = subjects.find(sub => sub.id === selectedSubject);
-  const availableTopics: string[] = selectedSubjectData?.topics?.length
+  const configuredTopics: string[] = selectedSubjectData?.topics?.length
     ? selectedSubjectData.topics
         .map((t: string | { name?: string }) => (typeof t === 'string' ? t : t.name || ""))
         .filter((t: any): t is string => Boolean(t))
-    : getTopicsForSubject(selectedSubjectData?.slug || selectedSubjectSlug || selectedSubject);
+    : [];
+  const [questionTopics, setQuestionTopics] = useState<string[]>([]);
+  const availableTopics = questionTopics.length > 0 ? questionTopics : configuredTopics;
+
+  useEffect(() => {
+    if (!selectedSubject) return;
+    contentService.getAvailableTopics({ examType: selectedExamType, subjectId: selectedSubject })
+      .then((topics) => setQuestionTopics(topics.map((topic) => topic.name)))
+      .catch(() => setQuestionTopics([]));
+  }, [selectedExamType, selectedSubject]);
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -248,6 +245,7 @@ export default function ContentManager() {
         },
         body: JSON.stringify({
           subjectId: selectedSubject,
+          examType: selectedExamType,
           questionText: processMathInString(qText),
           options: options.map(processMathInString),
           correctOption: Number(correctOpt),
@@ -427,6 +425,15 @@ export default function ContentManager() {
         {activeTab === 'question' && (
           <form onSubmit={handleAddQuestion} className="space-y-6">
             <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><FileText className="text-emerald-600"/> Add New Question</h2>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Exam</label>
+              <input
+                value={selectedExamType}
+                onChange={(event) => setSelectedExamType(event.target.value.trim().toLowerCase())}
+                placeholder="jamb, waec, neco"
+                className="w-full p-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Select Subject</label>
               <select className="w-full p-3 border border-slate-300 rounded-xl outline-none capitalize focus:ring-2 focus:ring-emerald-500" value={selectedSubject} onChange={e => {

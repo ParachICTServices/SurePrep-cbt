@@ -6,6 +6,7 @@ import { Loader2, CheckCircle, Zap, Shield, Star, Lock, GraduationCap, Briefcase
 import { toast } from "sonner";
 import { ThemeToggle } from "@/app/components/theme-toggle";
 import ComingSoon from "@/app/components/ComingSoon";
+import { authService } from "@/app/lib/api/services/authService";
 
 
 
@@ -164,57 +165,32 @@ export default function RegisterOnboarding() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          displayName: name,
-          examCategory: examCategory as ExamCategory,
-          specialization: specialization || 'general',
-        }),
+      const response = await authService.register({
+        email,
+        password,
+        displayName: name,
+        examCategory: examCategory as ExamCategory,
+        specialization: specialization || 'general',
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-
-  
-      setUserId(data.user.id || data.userId);
-
-      await fetch(`${API_BASE_URL}/auth/send-verification-otp`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email }),
-});
-
-setStep('verify');
-      
-    
-      if (data.verificationToken) {
-        setVerificationToken(data.verificationToken);
-      }
+      setUserId(response.user.id);
 
       toast.success("Account created! Please verify your email.");
       setLoading(false);
       setStep('verify');
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Registration error:", error);
-     
-      if (error.message.includes("email already exists") || error.message.includes("already registered")) {
+
+      const message = error instanceof Error ? error.message : "Registration failed. Please try again.";
+      if (message.includes("email-already-in-use") || message.includes("email already exists") || message.includes("already registered")) {
         toast.error("This email is already registered. Please log in.");
-      } else if (error.message.includes("weak password")) {
+      } else if (message.includes("weak-password") || message.includes("weak password")) {
         toast.error("Password is too weak. Use at least 6 characters.");
-      } else if (error.message.includes("invalid email")) {
+      } else if (message.includes("invalid-email") || message.includes("invalid email")) {
         toast.error("Invalid email address.");
       } else {
-        toast.error(error.message || "Registration failed. Please try again.");
+        toast.error(message);
       }
       setLoading(false);
     }
@@ -224,16 +200,9 @@ setStep('verify');
 const handleResendVerification = async () => {
   setResendingEmail(true);
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/send-verification-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ email }),
-    });
-
-    if (!response.ok) throw new Error('Failed to send OTP');
-    
+    await authService.sendVerificationOtp(email);
     toast.success("OTP sent to your email!");
-  } catch (error) {
+  } catch {
     toast.error("Failed to send OTP. Please try again.");
   } finally {
     setResendingEmail(false);
@@ -249,23 +218,12 @@ const handleVerifyOTP = async () => {
   
   setLoading(true);
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp }), 
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Invalid OTP code');
-    }
-    
+    await authService.verifyEmail(email, otp);
     toast.success("Email verified successfully! 🎉");
     // Skip purchase/plan step — auto-login and go to dashboard for free access
     await handleFreePlan();
-  } catch (error: any) {
-    toast.error(error.message);
+  } catch (error: unknown) {
+    toast.error(error instanceof Error ? error.message : "Invalid verification code");
   } finally {
     setLoading(false);
   }
@@ -280,30 +238,13 @@ const handleVerifyOTP = async () => {
     setLoading(true);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/check-verification`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId, email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Verification check failed');
-      }
-      
-      if (data.emailVerified || data.verified) {
-        toast.success("Email verified successfully! 🎉");
-        // Skip plan selection: auto-login for free access
-        await handleFreePlan();
-      } else {
-        toast.error("Email not verified yet. Please check your inbox and click the verification link first.");
-      }
-    } catch (error: any) {
+      await authService.verifyEmail(email, "check");
+      toast.success("Email verified successfully! 🎉");
+      // Skip plan selection: auto-login for free access
+      await handleFreePlan();
+    } catch (error: unknown) {
       console.error("Verification check error:", error);
-      toast.error(error.message || "Failed to check verification status. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to check verification status. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -401,26 +342,8 @@ const handleVerifyOTP = async () => {
 
   const handleFreePlan = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      if (data.token) {
-        localStorage.setItem('auth_token', data.token);
-      }
-
       router.push("/dashboard");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
       toast.error("Failed to log in. Please try logging in manually.");
       router.push("/login");

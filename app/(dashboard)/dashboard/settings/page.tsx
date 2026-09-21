@@ -3,8 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { GraduationCap, School, Briefcase, Save, CheckCircle, Loader2, Beaker, Palette, Calculator, Globe } from "lucide-react";
 import { toast } from "sonner";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+import { userService } from "@/app/lib/api/services/userService";
 
 const EXAM_CATEGORIES = [
   {
@@ -104,27 +103,10 @@ export default function SettingsPage() {
     setSaveSuccess(false);
 
     try {
-      const token = localStorage.getItem('auth_token');
-      
-      const payload: any = {
+      await userService.updateProfile({
         examCategory: selectedCategory,
         specialization: selectedCategory === 'senior' ? selectedSpecialization : 'general'
-      };
-
-      const response = await fetch(`${API_BASE_URL}/users/me`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to update settings");
-      }
-
-      await new Promise(resolve => setTimeout(resolve, 300));
 
       if (refreshUser) {
         await refreshUser();

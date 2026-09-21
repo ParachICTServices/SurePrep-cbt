@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "import:firebase": "node scripts/import-firestore-export.mjs"
   },
   "dependencies": {
     "@paystack/inline-js": "^2.22.7",

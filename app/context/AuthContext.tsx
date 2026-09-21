@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authService } from '@/app/lib/api/services/authService';
-import { apiClient } from '@/app/lib/api/apiClient';
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/app/lib/firebase";
 import { User } from '@/app/type';
 import { useRouter } from 'next/navigation';
 
@@ -25,32 +26,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('auth_token');
-      if (token) {
+      return onAuthStateChanged(auth, async (firebaseUser) => {
         try {
-          apiClient.setToken(token);
-          const currentUser = await authService.getCurrentUser();
-          setUser(currentUser);
+          setUser(firebaseUser ? await authService.getCurrentUser() : null);
         } catch (error) {
           console.error('Session expired or invalid:', error);
-          localStorage.removeItem('auth_token');
-          apiClient.clearToken();
           setUser(null);
+        } finally {
+          setLoading(false);
         }
-      }
-      setLoading(false);
+      });
     };
 
-    initAuth();
+    const unsubscribe = initAuth();
+    return () => { unsubscribe.then((cleanup) => cleanup()); };
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       const response = await authService.login({ email, password });
-      if (response.accessToken) {
-        localStorage.setItem('auth_token', response.accessToken);
-        apiClient.setToken(response.accessToken);
-      }
       setUser(response.user);
       return response.user;
     } catch (error) {
@@ -61,10 +55,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (data: any) => {
     try {
       const response = await authService.register(data);
-      if (response.accessToken) {
-        localStorage.setItem('auth_token', response.accessToken);
-        apiClient.setToken(response.accessToken);
-      }
       setUser(response.user);
       return response.user;
     } catch (error) {
@@ -73,8 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const clearLocalSession = () => {
-    localStorage.removeItem('auth_token');
-    apiClient.clearToken();
+    void authService.logout();
     setUser(null);
   };
 

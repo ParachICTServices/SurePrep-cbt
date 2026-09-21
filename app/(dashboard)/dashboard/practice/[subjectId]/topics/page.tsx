@@ -1,13 +1,11 @@
 "use client";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, BookOpen, Sparkles, Loader2, Coins } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/app/context/AuthContext";
-
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
-).replace(/\/$/, "");
+import { subjectService } from "@/app/lib/api/services/subjectService";
+import { contentService } from "@/app/lib/api/services/contentService";
 
 interface Topic {
   id: string;
@@ -19,37 +17,25 @@ interface Topic {
 export default function TopicSelectionPage() {
   const { user, loading: authLoading } = useAuth();
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const subjectId = params.subjectId as string;
+  const examType = searchParams.get("examType") || "jamb";
 
   const [subjectName, setSubjectName] = useState("");
   const [topics, setTopics] = useState<Topic[]>([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [policy, setPolicy] = useState({ questionsPerCredit: 10 });
+  const [policy] = useState({ questionsPerCredit: 10 });
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = localStorage.getItem("auth_token");
-      if (!token) return;
-
       try {
-        const [policyRes, subjectRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/credits/policy`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${API_BASE_URL}/subjects/${subjectId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        const policyData = await policyRes.json();
-        setPolicy(policyData);
-
-        const subjectData = await subjectRes.json();
-        setSubjectName(subjectData.name || subjectId);
-        setTotalQuestions(subjectData.questionCount || 0);
-        setTopics(subjectData.topics || []);
+        const subject = await subjectService.getSubject(subjectId);
+        const availableTopics = await contentService.getAvailableTopics({ examType, subjectId });
+        setSubjectName(subject.name || subjectId);
+        setTotalQuestions(availableTopics.reduce((total, topic) => total + topic.questionCount, 0));
+        setTopics(availableTopics.map((topic) => ({ ...topic, cost: 0 })));
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -58,7 +44,7 @@ export default function TopicSelectionPage() {
     };
 
     if (!authLoading && user) fetchData();
-  }, [subjectId, user, authLoading]);
+  }, [subjectId, examType, user, authLoading]);
 
   const calculateCredits = (questionCount: number): number => {
     if (questionCount === 0) return 0;
@@ -68,13 +54,13 @@ export default function TopicSelectionPage() {
   const handleTopicClick = (topic: Topic) => {
     const cost = topic.cost ?? calculateCredits(topic.questionCount ?? 0);
     router.push(
-      `/dashboard/practice/${subjectId}/start?topic=${encodeURIComponent(topic.id)}&topicName=${encodeURIComponent(topic.name)}&cost=${cost}&totalQuestions=${topic.questionCount ?? 0}`
+      `/dashboard/practice/${subjectId}/start?examType=${encodeURIComponent(examType)}&topic=${encodeURIComponent(topic.id)}&topicName=${encodeURIComponent(topic.name)}&cost=${cost}&totalQuestions=${topic.questionCount ?? 0}`
     );
   };
 
   const handleAllTopics = () => {
     router.push(
-      `/dashboard/practice/${subjectId}/start?cost=0&totalQuestions=${totalQuestions}`
+      `/dashboard/practice/${subjectId}/start?examType=${encodeURIComponent(examType)}&cost=0&totalQuestions=${totalQuestions}`
     );
   };
 

@@ -4,8 +4,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, XCircle, ArrowLeft, Lock, Zap, Loader2 } from "lucide-react";
 import Link from "next/link";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+import { examService } from "@/app/lib/api/services/examService";
 
 export default function ExamResultReview() {
   const { id } = useParams();
@@ -18,26 +17,17 @@ const isPremium = user?.credits && user.credits > 0;
   useEffect(() => {
     const fetchResult = async () => {
       if (!id) return;
-      const token = localStorage.getItem('auth_token');
       
       try {
-        const response = await fetch(`${API_BASE_URL}/test-results/my/${id}`, {
-          headers: { 
-            'Authorization': `Bearer ${token}` 
-          }
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch result");
-
-        const data = await response.json();
+        const data = await examService.getTestResult(String(id));
         
-        const cleanResult: any = {
-          subject: data.subject || data.subjectName || 'Unknown',
+        const cleanResult = {
+          subject: data.subject || 'Unknown',
           score: data.score || 0,
           totalQuestions: data.totalQuestions || 0,
           percentage: data.percentage || 0,
-history: data.history || [],
-          date: data.createdAt ? new Date(data.createdAt).toLocaleDateString() : 'Recent'
+          history: data.history || [],
+          date: data.date || 'Recent'
         };
         
         setResult(cleanResult);

@@ -1,4 +1,12 @@
-import { apiClient } from "../apiClient";
+import {
+  FIRESTORE_COLLECTIONS,
+  getRecord,
+  listRecords,
+  recordFromSnapshot,
+  createRecord,
+  updateRecord,
+  removeRecord,
+} from "@/app/lib/firebaseData";
 
 export type SubjectCategory = "sciences" | "arts" | "commercial" | "general";
 
@@ -38,12 +46,24 @@ function normalizeSubjectsPayload(raw: unknown): PaginatedSubjectsResponse {
 }
 
 export const subjectService = {
+  async getSubject(id: string): Promise<Subject> {
+    const subject = await getRecord(FIRESTORE_COLLECTIONS.subjects, id);
+    if (!subject) throw new Error("Subject not found.");
+    return subject as Subject;
+  },
+
   async getSubjectsPage(params: { page?: number; limit?: number } = {}): Promise<PaginatedSubjectsResponse> {
     const page = params.page ?? 1;
     const limit = params.limit ?? 50;
-    const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
-    const raw = await apiClient.get<unknown>(`/subjects?${qs.toString()}`);
-    return normalizeSubjectsPayload(raw);
+    const subjects = await listRecords(FIRESTORE_COLLECTIONS.subjects);
+    const start = (page - 1) * limit;
+    return {
+      data: subjects.slice(start, start + limit) as Subject[],
+      total: subjects.length,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(subjects.length / limit)),
+    };
   },
 
   async getAllSubjects(params: { limit?: number } = {}): Promise<Subject[]> {
@@ -71,6 +91,18 @@ export const subjectService = {
     }
 
     return out;
+  },
+
+  async createSubject(data: Omit<Subject, "id">): Promise<Subject> {
+    return createRecord(FIRESTORE_COLLECTIONS.subjects, data) as Promise<Subject>;
+  },
+
+  async updateSubject(id: string, data: Partial<Subject>): Promise<Subject> {
+    return updateRecord(FIRESTORE_COLLECTIONS.subjects, id, data) as Promise<Subject>;
+  },
+
+  async deleteSubject(id: string): Promise<void> {
+    await removeRecord(FIRESTORE_COLLECTIONS.subjects, id);
   },
 };
 

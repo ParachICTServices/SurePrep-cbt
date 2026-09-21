@@ -1,4 +1,4 @@
-import { apiClient } from '../apiClient';
+import { FIRESTORE_COLLECTIONS, getRecord, listRecords } from "@/app/lib/firebaseData";
 
 export interface AdminCreditTransactionListParams {
   limit?: number;
@@ -39,33 +39,27 @@ function parseListResponse(response: unknown): AdminCreditTransactionListResult 
   };
 }
 
-function buildQuery(params: AdminCreditTransactionListParams): string {
-  const searchParams = new URLSearchParams();
-  if (params.limit != null) searchParams.set('limit', String(params.limit));
-  if (params.page != null) searchParams.set('page', String(params.page));
-  if (params.packageId?.trim()) searchParams.set('packageId', params.packageId.trim());
-  if (params.type?.trim()) searchParams.set('type', params.type.trim());
-  if (params.dateFrom?.trim()) searchParams.set('dateFrom', params.dateFrom.trim());
-  if (params.dateTo?.trim()) searchParams.set('dateTo', params.dateTo.trim());
-  if (params.userId?.trim()) searchParams.set('userId', params.userId.trim());
-  const q = searchParams.toString();
-  return q ? `?${q}` : '';
-}
-
 export const creditTransactionAdminService = {
   async list(
     params: AdminCreditTransactionListParams
   ): Promise<AdminCreditTransactionListResult> {
-    const response = await apiClient.get<unknown>(
-      `/credit-transactions/admin${buildQuery(params)}`
+    const all = await listRecords(FIRESTORE_COLLECTIONS.creditTransactions);
+    const filtered = all.filter((row) =>
+      (!params.packageId || row.packageId === params.packageId) &&
+      (!params.type || row.type === params.type) &&
+      (!params.userId || row.userId === params.userId) &&
+      (!params.dateFrom || String(row.createdAt ?? "") >= params.dateFrom) &&
+      (!params.dateTo || String(row.createdAt ?? "") <= params.dateTo)
     );
-    return parseListResponse(response);
+    const page = params.page ?? 1;
+    const limit = params.limit ?? filtered.length;
+    return { items: filtered.slice((page - 1) * limit, page * limit), total: filtered.length, page, limit };
   },
 
   async getById(id: string): Promise<CreditTransactionRecord> {
-    return apiClient.get<CreditTransactionRecord>(
-      `/credit-transactions/admin/${encodeURIComponent(id)}`
-    );
+    const result = await getRecord(FIRESTORE_COLLECTIONS.creditTransactions, id);
+    if (!result) throw new Error("Credit transaction not found.");
+    return result as CreditTransactionRecord;
   },
 };
 

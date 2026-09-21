@@ -4,9 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { Loader2, CheckCircle, AlertCircle, Play, GraduationCap, BookOpen, Sparkles, Briefcase, Globe, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { subjectService } from "@/app/lib/api/services/subjectService";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+import { contentService, type AvailableSubject } from "@/app/lib/api/services/contentService";
 
 const EXAM_CONFIG = {
   jamb: { label: "JAMB / UTME", subtitle: "Select your 4 subject combination", icon: GraduationCap, duration: "2 Hours", subjectCount: 4, multiSubject: true, gradient: "from-slate-900 to-slate-800", accent: "bg-emerald-600", ringColor: "border-emerald-500 bg-emerald-50 text-emerald-900" },
@@ -25,27 +23,18 @@ function MockSetupInner() {
   const config = EXAM_CONFIG[examType];
   const Icon = config.icon;
 
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<AvailableSubject[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSubs = async () => {
-      const token = localStorage.getItem('auth_token');
       try {
-        if (!token) return;
-        const { data: subjectsArray } = await subjectService.getSubjectsPage({ page: 1, limit: 50 });
-        
-        const formatted = subjectsArray.map((s: any) => ({
-            id: s.id || s._id,
-            name: s.name
-        }));
-        setSubjects(formatted);
-
-        if (examType === "jamb") {
-          const eng = formatted.find((s: any) => s.name.toLowerCase().includes("english"));
-          if (eng) setSelected([eng.id]);
-        }
+        const availableSubjects = await contentService.getAvailableSubjects({
+          examType,
+          specialization: user?.specialization,
+        });
+        setSubjects(availableSubjects);
       } catch (error) {
         console.error(error);
       } finally {
@@ -53,7 +42,7 @@ function MockSetupInner() {
       }
     };
     if (!authLoading) fetchSubs();
-  }, [examType, authLoading]);
+  }, [examType, authLoading, user]);
 
   const toggleSubject = (id: string) => {
     if (selected.includes(id)) {

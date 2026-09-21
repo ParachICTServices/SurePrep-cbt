@@ -6,9 +6,9 @@ import {
   BookOpen, Zap, Timer, Loader2,
   GraduationCap, Briefcase, Globe, ChevronRight, Sparkles, School, Award, Coins, Settings, AlertCircle
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { subjectService } from "@/app/lib/api/services/subjectService";
+import { contentService } from "@/app/lib/api/services/contentService";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
@@ -154,6 +154,7 @@ const ALL_EXAM_TYPES = [
 
 export default function PracticeSelection() {
   const { user, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
   const router = useRouter();
   
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -162,6 +163,7 @@ export default function PracticeSelection() {
   const userExamCategory = user?.examCategory || "senior";
   const userCredits = user?.credits || 0;
   const userSpecialization = user?.specialization || 'general';
+  const examType = searchParams.get("examType") || "jamb";
 
   const filteredExams = ALL_EXAM_TYPES.filter(exam => 
     exam.categories.includes(userExamCategory)
@@ -171,14 +173,31 @@ export default function PracticeSelection() {
 
   useEffect(() => {
    const fetchSubjects = async () => {
-  const token = localStorage.getItem('auth_token');
-  if (!token) return;
-  
   try {
-    const subjectsArray = await subjectService.getAllSubjects({ limit: 50 });
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[QUESTIONS NAV DEBUG] selection input", {
+        examType,
+        specialization: userSpecialization || null,
+        selectedSpecialization: user?.specialization || null,
+        course: null,
+        category: user?.examCategory || null,
+      });
+    }
+    const availableSubjects = await contentService.getAvailableSubjects({
+      examType,
+      specialization: userSpecialization,
+    });
 
-    const allSubjects: Subject[] = subjectsArray.map((s: any) => ({
-      id: s.id || s._id,
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[QUESTIONS NAV DEBUG] subjects from source", availableSubjects.map((subject) => ({
+        id: subject.id,
+        name: subject.name,
+        questionCount: subject.questionCount,
+      })));
+    }
+
+    const allSubjects: Subject[] = availableSubjects.map((s) => ({
+      id: s.id,
       name: s.name || "Unnamed Subject",
       category: s.category || "general",
       color: s.color || "bg-blue-100 text-blue-600",
@@ -191,6 +210,10 @@ export default function PracticeSelection() {
     });
 
     setSubjects(allSubjects);
+
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[QUESTIONS NAV DEBUG] subjects passed to navigation", allSubjects.map((subject) => subject.name));
+    }
     
   } catch (error) {
     console.error("❌ Error fetching subjects:", error);
@@ -202,26 +225,43 @@ export default function PracticeSelection() {
     if (!authLoading && user) {
       fetchSubjects();
     }
-  }, [user, authLoading, userSpecialization]);
+  }, [user, authLoading, userSpecialization, examType]);
 
-  const handleExamClick = (exam: (typeof ALL_EXAM_TYPES)[0]) => {
-    // Allow access to exams for all registered users (free experience)
-    const subjectId = resolveSubjectIdForExam(exam.id, subjects);
-    if (!subjectId) {
-      toast.error("No subject is available to link this exam. Try again after subjects load.");
-      return;
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[QUESTIONS NAV DEBUG] final rendered subjects", subjects.map((subject) => subject.name));
     }
-    const q = new URLSearchParams({
-      subjectId,
-      cost: String(exam.creditCost),
-      type: exam.id,
-    });
-    router.push(`/dashboard/start-exam?${q.toString()}`);
+  }, [subjects]);
+
+  const handleExamClick = async (exam: (typeof ALL_EXAM_TYPES)[0]) => {
+    try {
+      // Allow access to exams for all registered users (free experience)
+      const examSubjects = exam.id === examType
+        ? subjects
+        : await contentService.getAvailableSubjects({
+            examType: exam.id,
+            specialization: userSpecialization,
+          });
+      const subjectId = resolveSubjectIdForExam(exam.id, examSubjects);
+      if (!subjectId) {
+        toast.error("No questions are available for this exam yet.");
+        return;
+      }
+      const q = new URLSearchParams({
+        subjectId,
+        cost: String(exam.creditCost),
+        type: exam.id,
+      });
+      router.push(`/dashboard/start-exam?${q.toString()}`);
+    } catch (error) {
+      console.error("Error loading exam subjects:", error);
+      toast.error("Could not load subjects for this exam. Please try again.");
+    }
   };
 
   const handleSubjectClick = (subjectId: string) => {
     // Allow subject practice without requiring credits
-    router.push(`/dashboard/practice/${subjectId}/topics`);
+    router.push(`/dashboard/practice/${subjectId}/topics?examType=${encodeURIComponent(examType)}`);
   };
 
   if (authLoading || loading)

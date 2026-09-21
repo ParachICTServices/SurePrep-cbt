@@ -7,8 +7,9 @@ import React from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { MathText } from "@/app/components/MathText";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+import { subjectService } from "@/app/lib/api/services/subjectService";
+import { contentService } from "@/app/lib/api/services/contentService";
+import { examService } from "@/app/lib/api/services/examService";
 
 function MockExamContent() {
   const searchParams = useSearchParams();
@@ -49,23 +50,16 @@ function MockExamContent() {
     setActiveSubject(subList[0]);
 
     const fetchAllData = async () => {
-      const token = localStorage.getItem('auth_token');
       const questionsMap: Record<string, any[]> = {};
       const namesMap: Record<string, string> = {};
       
       try {
         await Promise.all(subList.map(async (subId) => {
-          const subRes = await fetch(`${API_BASE_URL}/subjects/${subId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const subData = await subRes.json();
-          namesMap[subId] = subData.name || subId;
-
-          const qRes = await fetch(`${API_BASE_URL}/questions?subjectId=${subId}&limit=40`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          const qData = await qRes.json();
-          const rawQuestions = Array.isArray(qData) ? qData : (qData.data || qData.results || []);
+          const [subject, rawQuestions] = await Promise.all([
+            subjectService.getSubject(subId),
+            contentService.getPracticeQuestions({ examType, subjectId: subId, limit: 40 }),
+          ]);
+          namesMap[subId] = subject.name || subId;
           
           questionsMap[subId] = shuffleArray(rawQuestions.map((q: any) => ({
             id: q.id || q._id,
@@ -112,36 +106,48 @@ function MockExamContent() {
   };
 
   const handleSubmit = async () => {
-    const token = localStorage.getItem('auth_token');
     setSubmitted(true);
     let totalScore = 0;
     let totalQuestions = 0;
+    const history: Array<{
+      questionId?: string;
+      questionText: string;
+      options: string[];
+      correctOption: number;
+      selectedOption: number;
+      explanation: string;
+      imageURL?: string;
+    }> = [];
 
     subjects.forEach(sub => {
       const subQs = allQuestions[sub] || [];
       const subAns = answers[sub] || {};
       subQs.forEach((q, idx) => {
         if (subAns[idx] === q.correctOption) totalScore++;
+        history.push({
+          questionId: q.id,
+          questionText: q.questionText,
+          options: q.options,
+          correctOption: q.correctOption,
+          selectedOption: subAns[idx] ?? -1,
+          explanation: q.explanation ?? "",
+          imageURL: q.imageURL,
+        });
       });
       totalQuestions += subQs.length;
     });
 
     try {
-      await fetch(`${API_BASE_URL}/test-results`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          subject: `${examType.toUpperCase()} Mock Simulation`,
-          subjectsIncluded: subjects,
-          score: totalScore,
-          totalQuestions,
-          percentage: Math.round((totalScore / totalQuestions) * 100) || 0,
-          type: "mock",
-          examType: examType
-        })
+      await examService.submitTestResult({
+        userId: user?.id ?? "",
+        subject: `${examType.toUpperCase()} Mock Simulation`,
+        subjectId: subjects[0] ?? "",
+        score: totalScore,
+        totalQuestions,
+        percentage: Math.round((totalScore / totalQuestions) * 100) || 0,
+        date: new Date().toISOString(),
+        type: "mock",
+        history,
       });
       
       toast.success(`Mock Submitted! Score: ${totalScore}/${totalQuestions}`);

@@ -160,23 +160,15 @@ export default function StartExamPage() {
 
         <div className="p-8">
           <div className="space-y-6">
-            <div className="bg-slate-50 rounded-2xl p-6 space-y-4">
+            <div className="bg-slate-50 rounded-2xl p-6 space-y-2">
+              <div className="flex justify-between items-center text-slate-600">
+                <span>Access</span>
+                <span className="font-bold text-emerald-600">Free for registered users</span>
+              </div>
               <div className="flex justify-between items-center text-slate-600">
                 <span>Current Balance</span>
                 <span className="font-bold flex items-center gap-1">
                   <Coins size={16} /> {currentCredits.toLocaleString()}
-                </span>
-              </div>
-              <div className="flex justify-between items-center text-red-600">
-                <span>Exam Cost</span>
-                <span className="font-bold flex items-center gap-1">
-                  - <Coins size={16} /> {cost}
-                </span>
-              </div>
-              <div className="pt-4 border-t border-slate-200 flex justify-between items-center text-slate-900 font-bold text-lg">
-                <span>Remaining Balance</span>
-                <span className="text-emerald-600 flex items-center gap-1">
-                  <Coins size={20} /> {(currentCredits - cost).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -204,12 +196,12 @@ export default function StartExamPage() {
 
             <div className="flex gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-sm">
               <AlertCircle className="flex-shrink-0 mt-0.5" size={20} />
-              <p>Credits are non-refundable once you click "Start Exam". Ensure you are ready.</p>
+              <p>Practice exams are free. Start whenever you are ready.</p>
             </div>
 
             <button
               onClick={handleConfirmStart}
-              disabled={isDeducting || currentCredits < cost}
+              disabled={isDeducting}
               className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 text-lg"
             >
               {isDeducting ? (
@@ -225,14 +217,7 @@ export default function StartExamPage() {
               )}
             </button>
             
-            {currentCredits < cost && (
-              <div className="text-center">
-                <p className="text-red-500 font-medium text-sm mb-3">Insufficient credits.</p>
-                <Link href="/dashboard/buy-credits" className="inline-flex items-center gap-2 px-6 py-2 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600 transition">
-                  <Zap size={18} /> Buy Credits
-                </Link>
-              </div>
-            )}
+
           </div>
         </div>
       </div>

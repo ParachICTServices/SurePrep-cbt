@@ -7,10 +7,9 @@ import { Loader2, Eye, EyeOff, Mail, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/app/context/AuthContext";
+import { authService } from "@/app/lib/api/services/authService";
 import { getPostLoginPath } from "@/app/lib/auth/roles";
 import { ThemeToggle } from "@/app/components/theme-toggle";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
 
 export default function Login() {
   const router = useRouter();
@@ -52,30 +51,15 @@ export default function Login() {
     setResetLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: resetEmail }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to send reset code");
-      }
+      await authService.sendPasswordResetEmail(resetEmail);
 
       setResetEmailSent(true);
-      toast.success("Reset code sent to your email!");
-      router.push(`/reset-password/verify-otp?email=${encodeURIComponent(resetEmail)}`);
+      toast.success("Password reset link sent to your email!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to send reset code"); 
     } finally {
       setResetLoading(false);
     }
-  };
-
-  const handleBackToForgotPassword = () => {
-    setResetEmailSent(false);
-    setResetEmail("");
   };
 
   const handleBackToLogin = () => {
@@ -149,15 +133,11 @@ export default function Login() {
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-6 mb-6 border border-slate-200 dark:border-slate-700">
-                  <p className="text-sm text-slate-700 dark:text-slate-300 mb-2 font-medium">Reset Code Sent to:</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-300 mb-2 font-medium">Reset Link Sent to:</p>
                   <p className="font-bold text-slate-900 dark:text-white mb-6 break-all">{resetEmail}</p>
-
-                  <Link
-                    href={`/reset-password/verify-otp?email=${encodeURIComponent(resetEmail)}`}
-                    className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-100 mb-4"
-                  >
-                    Enter Reset Code
-                  </Link>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Open the link in your email to choose a new password.
+                  </p>
                 </div>
 
                 <button

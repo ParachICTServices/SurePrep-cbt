@@ -1,19 +1,28 @@
-import { apiClient } from '../apiClient';
+import { auth } from "@/app/lib/firebase";
+import {
+  FIRESTORE_COLLECTIONS,
+  changeUserCredits,
+  getCurrentUserProfile,
+  listRecords,
+  saveUserProfile,
+} from "@/app/lib/firebaseData";
 import { User, CreditTransaction } from '@/app/type'; 
 
 export const userService = {
   
   async getProfile(): Promise<User> {
-    return apiClient.get<User>('/users/me');
+    return getCurrentUserProfile();
   },
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    return apiClient.patch<User>('/users/me', data);
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error("You must be signed in.");
+    return saveUserProfile(uid, data);
   },
 
 
   async getCredits(): Promise<{ credits: number; totalCreditsEarned: number }> {
-    const user = await apiClient.get<User>('/users/me');
+    const user = await getCurrentUserProfile();
     return {
       credits: user.credits,
       totalCreditsEarned: user.totalCreditsEarned
@@ -22,24 +31,28 @@ export const userService = {
 
   
   async verifyPayment(reference: string, packageId: string): Promise<any> {
-    return apiClient.post('/payments/verify', {
-      reference,
-      packageId
-    });
+    throw new Error("Payment verification requires a trusted server function.");
   },
 
 
   async deductCredits(amount: number): Promise<void> {
-    await apiClient.post('/users/me/deduct-credits', { amount });
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error("You must be signed in.");
+    await changeUserCredits(uid, -amount);
   },
 
 
   async getCreditTransactions(): Promise<CreditTransaction[]> {
-    return apiClient.get<CreditTransaction[]>('/credit-transactions');
+    const uid = auth.currentUser?.uid;
+    if (!uid) return [];
+    const transactions = await listRecords(FIRESTORE_COLLECTIONS.creditTransactions);
+    return transactions.filter((transaction) => transaction.userId === uid) as CreditTransaction[];
   },
   
   
   async getDashboardSummary(): Promise<any> {
-    return apiClient.get('/users/me/dashboard');
+    const user = await getCurrentUserProfile();
+    const transactions = await this.getCreditTransactions();
+    return { user, credits: user.credits, totalCreditsEarned: user.totalCreditsEarned, transactions };
   }
 };

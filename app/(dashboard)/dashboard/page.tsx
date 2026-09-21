@@ -4,9 +4,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useEffect, useState } from "react";
 import { Trophy, Clock, TrendingUp, ArrowRight, Activity, Calendar, Zap, Loader2, Coins, Wallet, CreditCard } from "lucide-react";
 import Link from "next/link";
-
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+import { examService } from "@/app/lib/api/services/examService";
 
 export default function DashboardOverview() {
 
@@ -24,36 +22,26 @@ export default function DashboardOverview() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      const token = localStorage.getItem("auth_token");
-      if (!token || !user) return;
+      if (!user) {
+        setDataLoading(false);
+        return;
+      }
 
       try {
-    
-        const statsRes = await fetch(`${API_BASE_URL}/users/me/dashboard`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const statsData = await statsRes.json();
-
-        
-        const resultsRes = await fetch(`${API_BASE_URL}/test-results?limit=5`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const resultsData = await resultsRes.json();
-
-      
+        const results = await examService.getTestResults({ limit: 5 });
+        const percentages = results.map((result) => Number(result.percentage ?? 0));
         setStats({
-          totalTests: statsData.testStats?.totalTests || 0,
-          averageScore: Math.round(statsData.testStats?.averageScore || 0)
+          totalTests: results.length,
+          averageScore: percentages.length
+            ? Math.round(percentages.reduce((total, value) => total + value, 0) / percentages.length)
+            : 0,
         });
 
-      
-        const resultsArray = Array.isArray(resultsData) ? resultsData : (resultsData.results || []);
-        
-        const formattedResults = resultsArray.map((res: any) => ({
+        const formattedResults = results.map((res) => ({
           id: res.id,
-          date: res.createdAt ? new Date(res.createdAt).toLocaleDateString() : 'Recent', 
-          percentage: res.scorePercentage || res.percentage || 0,
-          subject: res.subject?.name || res.subject || "General Test",
+          date: res.date || "Recent",
+          percentage: res.percentage || 0,
+          subject: res.subject || "General Test",
           score: res.score || 0,
           totalQuestions: res.totalQuestions || 0
         }));

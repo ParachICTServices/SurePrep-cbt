@@ -1,4 +1,11 @@
-import { apiClient } from '../apiClient';
+import {
+  FIRESTORE_COLLECTIONS,
+  createRecord,
+  getRecord,
+  listRecords,
+  removeRecord,
+  updateRecord,
+} from "@/app/lib/firebaseData";
 
 export interface Package {
   id: string;
@@ -92,32 +99,30 @@ class PackageService {
 
   // Admin methods
   async getAllPackages(): Promise<Package[]> {
-    const response = await apiClient.get<any>(this.basePath);
-    // Handle different response formats as seen in other admin services
-    return Array.isArray(response) ? response : (response.data || response.results || []);
+    return (await listRecords(FIRESTORE_COLLECTIONS.packages)) as Package[];
   }
 
   // User methods
   async getUserPackages(): Promise<Package[]> {
-    const response = await apiClient.get<any>(this.userBasePath);
-    // Handle different response formats as seen in other admin services
-    return Array.isArray(response) ? response : (response.data || response.results || []);
+    return (await listRecords(FIRESTORE_COLLECTIONS.packages)) as Package[];
   }
 
   async getPackageById(id: string): Promise<Package> {
-    return await apiClient.get<Package>(`${this.basePath}/${id}`);
+    const result = await getRecord(FIRESTORE_COLLECTIONS.packages, id);
+    if (!result) throw new Error("Package not found.");
+    return result as Package;
   }
 
   async createPackage(packageData: CreatePackageRequest): Promise<Package> {
-    return await apiClient.post<Package>(this.basePath, packageData);
+    return createRecord(FIRESTORE_COLLECTIONS.packages, packageData) as Promise<Package>;
   }
 
   async updatePackage(id: string, packageData: UpdatePackageRequest): Promise<Package> {
-    return await apiClient.patch<Package>(`${this.basePath}/${id}`, packageData);
+    return updateRecord(FIRESTORE_COLLECTIONS.packages, id, packageData) as Promise<Package>;
   }
 
   async deletePackage(id: string): Promise<void> {
-    await apiClient.delete(`${this.basePath}/${id}`);
+    await removeRecord(FIRESTORE_COLLECTIONS.packages, id);
   }
 }
 

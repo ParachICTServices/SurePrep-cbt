@@ -1,14 +1,12 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@/app/context/AuthContext";
 import { MathText } from "@/app/components/MathText";
 import { Loader2, Timer, CheckCircle, AlertCircle, X, ZoomIn } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-
-const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com"
-).replace(/\/$/, "");
+import { subjectService } from "@/app/lib/api/services/subjectService";
+import { examService } from "@/app/lib/api/services/examService";
+import { contentService } from "@/app/lib/api/services/contentService";
 
 interface Question {
   id: string;
@@ -23,9 +21,9 @@ export default function ExamInterface() {
   const { subjectId } = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user } = useAuth();
 
   const topicFilter = searchParams.get("topic");
+  const examType = searchParams.get("examType") || "jamb";
 const subsParam = searchParams.get("subjectIds");
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -39,6 +37,7 @@ const subsParam = searchParams.get("subjectIds");
   const [showExitModal, setShowExitModal] = useState(false);
   const [allowNavigation, setAllowNavigation] = useState(false);
   const [imageZoomed, setImageZoomed] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
 
   function shuffleArray<T>(array: T[]): T[] {
     const shuffled = [...array];
@@ -51,14 +50,10 @@ const subsParam = searchParams.get("subjectIds");
 
   useEffect(() => {
     const fetchSubjectName = async () => {
-      const token = localStorage.getItem("auth_token");
-      if (!token || !subjectId) return;
+      if (!subjectId) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/subjects/${subjectId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        setSubjectName(data.name || "");
+        const subject = await subjectService.getSubject(String(subjectId));
+        setSubjectName(subject.name || "");
       } catch (error) {
         console.error("Error fetching subject name:", error);
       }
@@ -68,43 +63,32 @@ const subsParam = searchParams.get("subjectIds");
 
   useEffect(() => {
     const fetchQuestions = async () => {
-      const token = localStorage.getItem("auth_token");
       try {
-        let url = "";
-        if (topicFilter) {
-          url = `${API_BASE_URL}/subjects/${subjectId}/topics/${topicFilter}/questions`;
-        } else if (subsParam) {
-          url = `${API_BASE_URL}/questions/mock?subjectIds=${subsParam}`;
-        } else {
-          url = `${API_BASE_URL}/questions?subjectId=${subjectId}&limit=50`;
-        }
-
-        const qRes = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
+        const rawQuestions = await contentService.getPracticeQuestions({
+          examType,
+          subjectId: String(subjectId),
+          topicId: topicFilter,
+          subject: String(subjectId),
         });
-        const qData = await qRes.json();
-
-        const rawQuestions = Array.isArray(qData) ? qData : qData.data || qData.results || [];
         setQuestions(
-          shuffleArray(
-            rawQuestions.map((q: any) => ({
-              id: q.id || q._id,
-              ...q,
-            }))
-          )
+          shuffleArray(rawQuestions)
         );
       } catch (error) {
         console.error("Fetch Error:", error);
+        setAccessError(
+          error instanceof Error && /403|402|access|unlock|premium/i.test(error.message)
+            ? "You've completed the 100 free practice questions for this subject. Unlock more questions to continue practicing."
+            : "We couldn't load questions for this selection. Please try again."
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchQuestions();
-  }, [subjectId, topicFilter, subsParam]);
+  }, [subjectId, topicFilter, examType, subsParam]);
 
   const handleSubmit = useCallback(async () => {
-    const token = localStorage.getItem("auth_token");
     let newScore = 0;
     questions.forEach((q, index) => {
       if (selectedOptions[index] === q.correctOption) newScore += 1;
@@ -116,29 +100,24 @@ const subsParam = searchParams.get("subjectIds");
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     try {
-      await fetch(`${API_BASE_URL}/test-results`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          subjectId,
-          subjectName,
-          score: newScore,
-          totalQuestions: questions.length,
-          percentage: Math.round((newScore / questions.length) * 100),
-          type: "practice",
-          topic: topicFilter || "all-topics",
-          history: questions.map((q, index) => ({
-            questionText: q.questionText,
-            options: q.options,
-            correctOption: q.correctOption,
-            selectedOption: selectedOptions[index] ?? -1,
-            explanation: q.explanation || "No explanation provided.",
-            imageURL: q.imageURL || null,
-          })),
-        }),
+      await examService.submitTestResult({
+        subjectId: String(subjectId),
+        subject: subjectName,
+        score: newScore,
+        totalQuestions: questions.length,
+        percentage: Math.round((newScore / questions.length) * 100),
+        type: "practice",
+        topic: topicFilter || "all-topics",
+        date: new Date().toISOString(),
+        history: questions.map((q, index) => ({
+          questionId: q.id,
+          questionText: q.questionText,
+          options: q.options,
+          correctOption: q.correctOption,
+          selectedOption: selectedOptions[index] ?? -1,
+          explanation: q.explanation || "No explanation provided.",
+          imageURL: q.imageURL,
+        })),
       });
     } catch (error) {
       console.error("Error saving test result:", error);
@@ -209,8 +188,21 @@ const subsParam = searchParams.get("subjectIds");
     return (
       <div className="max-w-2xl mx-auto text-center mt-20 bg-white rounded-2xl p-10 border border-slate-200">
         <AlertCircle className="mx-auto text-amber-500 mb-4" size={48} />
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">No Questions Found</h2>
-        <p className="text-slate-500 mb-6">We couldn't find any questions for this selection.</p>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">
+          {accessError ? "Free Practice Complete" : "No Questions Found"}
+        </h2>
+        <p className="text-slate-500 mb-6">
+          {accessError || "We couldn't find any questions for this selection."}
+        </p>
+        {accessError && (
+          <Link
+            href="/dashboard/buy-credits"
+            className="inline-block px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl mb-3"
+          >
+            Unlock More Questions
+          </Link>
+        )}
+        <br />
         <Link
           href="/dashboard/practice"
           className="inline-block px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl"

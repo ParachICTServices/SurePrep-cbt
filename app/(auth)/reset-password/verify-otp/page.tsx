@@ -6,7 +6,7 @@ import { Loader2, Mail, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/app/components/theme-toggle";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://cbt.excelpracticehub.com").replace(/\/$/, "");
 const OTP_LENGTH = 6;
 
 function VerifyOtpForm() {
@@ -139,7 +139,7 @@ function VerifyOtpForm() {
       </button>
 
       <div className="text-center text-sm text-slate-500 dark:text-slate-400">
-        Didn't receive a code?{" "}
+        Didn&apos;t receive a code?{" "}
         {cooldown > 0 ? (
           <span className="text-slate-400 dark:text-slate-500">Resend in {cooldown}s</span>
         ) : (
