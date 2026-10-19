@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getAdminAuth, logAdminError } from "@/app/lib/firebaseAdmin";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 const APP_NAME = "TestGrid";
 
@@ -10,6 +9,11 @@ export async function POST(req: Request) {
   const { email } = await req.json();
 
   try {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+    const resend = new Resend(resendApiKey);
     const firebaseLink = await getAdminAuth().generatePasswordResetLink(email);
     const oobCode = new URL(firebaseLink).searchParams.get("oobCode");
     const link = `${APP_URL}/action?mode=resetPassword&oobCode=${oobCode}`;
