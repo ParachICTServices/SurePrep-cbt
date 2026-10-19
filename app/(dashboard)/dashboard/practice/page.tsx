@@ -148,9 +148,19 @@ const ALL_EXAM_TYPES = [
     borderColor: "border-teal-700",
     textColor: "text-white",
     subTextColor: "text-teal-200",
-    categories: ["professional", "senior", "junior"]
+    categories: ["professional", "senior", "junior"],
+    comingSoon: true,
   },
 ];
+
+/**
+ * Every subject for an exam type. No specialization filter, because that filter hides core subjects
+ * (like English) from students on a track, and each call downloads the question bank, so it is
+ * called once only.
+ */
+async function fetchExamSubjects(examType: string) {
+  return (await contentService.getAvailableSubjects({ examType, specialization: undefined } as any)) as any[];
+}
 
 export default function PracticeSelection() {
   const { user, loading: authLoading } = useAuth();
@@ -234,17 +244,22 @@ export default function PracticeSelection() {
   }, [subjects]);
 
   const handleExamClick = async (exam: (typeof ALL_EXAM_TYPES)[0]) => {
+    if ((exam as { comingSoon?: boolean }).comingSoon) {
+      toast.info(`${exam.label} is coming soon.`);
+      return;
+    }
     try {
-      // Allow access to exams for all registered users (free experience)
-      const examSubjects = exam.id === examType
-        ? subjects
-        : await contentService.getAvailableSubjects({
-            examType: exam.id,
-            specialization: userSpecialization,
-          });
+      const raw = await fetchExamSubjects(exam.id);
+      const examSubjects: Subject[] = raw.map((s) => ({
+        id: String(s.id),
+        name: s.name || "Unnamed Subject",
+        category: s.category || "general",
+        color: s.color || "",
+      }));
+
       const subjectId = resolveSubjectIdForExam(exam.id, examSubjects);
       if (!subjectId) {
-        toast.error("No questions are available for this exam yet.");
+        toast.error(`No questions are available for ${exam.label} yet.`);
         return;
       }
       const q = new URLSearchParams({
@@ -340,12 +355,17 @@ export default function PracticeSelection() {
           {filteredExams.map((exam) => {
             const Icon = exam.icon;
             const canAfford = userCredits >= exam.creditCost;
+            const comingSoon = Boolean((exam as { comingSoon?: boolean }).comingSoon);
             return (
-              <div key={exam.id} onClick={() => handleExamClick(exam)} className={`relative overflow-hidden bg-gradient-to-br ${exam.gradient} rounded-2xl p-6 cursor-pointer group border ${exam.borderColor} transition-all hover:scale-[1.02] hover:shadow-2xl ${!canAfford ? 'opacity-75' : ''}`}>
+              <div key={exam.id} onClick={() => handleExamClick(exam)} className={`relative overflow-hidden bg-gradient-to-br ${exam.gradient} rounded-2xl p-6 group border ${exam.borderColor} transition-all ${comingSoon ? 'cursor-not-allowed opacity-60' : `cursor-pointer hover:scale-[1.02] hover:shadow-2xl ${!canAfford ? 'opacity-75' : ''}`}`}>
                 <div className="relative z-10 flex flex-col gap-4">
                   <div className="flex items-start justify-between">
                     <div className="p-2.5 rounded-xl bg-white/10 text-white"><Icon size={22} /></div>
-                    <div className="flex items-center gap-1 bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full"><Coins size={12} /> {exam.creditCost}</div>
+                    {comingSoon ? (
+                      <div className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full">Coming soon</div>
+                    ) : (
+                      <div className="flex items-center gap-1 bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full"><Coins size={12} /> {exam.creditCost}</div>
+                    )}
                   </div>
                   <div>
                     <span className={`text-[10px] font-bold tracking-widest uppercase ${exam.subTextColor} mb-1 block`}>{exam.badge}</span>

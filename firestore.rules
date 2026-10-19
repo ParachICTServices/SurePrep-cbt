@@ -22,6 +22,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /demoSessions/{sessionId} {
+      allow read, write: if false;
+    }
+
     match /subjects/{subjectId} {
       allow read: if signedIn();
       allow write: if isAdmin();

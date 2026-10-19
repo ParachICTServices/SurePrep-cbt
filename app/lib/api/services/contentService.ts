@@ -93,6 +93,9 @@ function canonicalExamKey(value: unknown): string {
   return key;
 }
 
+// Subjects every student can take whatever their track (English is compulsory in JAMB/WAEC/NECO).
+const CORE_SUBJECTS = new Set(["english"]);
+
 const BROAD_SPECIALIZATIONS = new Set(["science", "sciences", "arts", "commercial", "general"]);
 
 function canonicalSpecialization(value: unknown): string | null {
@@ -112,17 +115,21 @@ function questionTopics(question: unknown): string[] {
   return Array.from(new Set([...names, singleTopic].filter(Boolean)));
 }
 
+// Exams that currently share the one untagged question bank. Remove an exam from this list
+// once it has its own questions tagged with examType.
+const SHARED_BANK_EXAMS = new Set(["jamb", "waec", "neco"]);
+
 function matchesExam(question: unknown, examType: string): boolean {
   const storedExam = questionExamType(question);
-  // The existing export contains untagged legacy questions from the original JAMB bank.
-  // They are available for JAMB only; they must not silently become WAEC or NECO content.
+  // Questions tagged with an exam only match that exam. Untagged legacy questions are the shared
+  // bank, available to every exam in SHARED_BANK_EXAMS.
   return storedExam
     ? canonicalExamKey(storedExam) === canonicalExamKey(examType)
-    : canonicalExamKey(examType) === "jamb";
+    : SHARED_BANK_EXAMS.has(canonicalExamKey(examType));
 }
 
 function matchesSubject(question: unknown, subject: Subject): boolean {
-  const subjectKeys = [subject.id, subject.name].map(canonicalSubjectKey);
+  const subjectKeys = Array.from(new Set([subject.id, subject.name].map(canonicalSubjectKey)));
   return questionSubjectValues(question).some((value) => subjectKeys.includes(value));
 }
 
@@ -248,7 +255,7 @@ export const contentService = {
     const matched: AvailableSubject[] = [];
     const rejected: string[] = [];
     for (const subject of subjects) {
-      const subjectKeys = [subject.id, subject.name].map(canonicalSubjectKey);
+      const subjectKeys = Array.from(new Set([subject.id, subject.name].map(canonicalSubjectKey)));
       const allowedByConfig = configuredIds
         ? configuredIds.some((id) => subjectKeys.includes(id))
         : (config?.specializations || config?.courses) && !specialization
@@ -258,7 +265,8 @@ export const contentService = {
         : !specialization
           ? true
           : canonicalSubjectKey(subject.category) === specialization
-            || subject.category === "general";
+            || subject.category === "general"
+            || subjectKeys.some((key) => CORE_SUBJECTS.has(key));
       const questionCount = subjectKeys.reduce((total, key) => total + (counts.get(key) ?? 0), 0);
       if (allowedByConfig && questionCount > 0) {
         matched.push({ ...subject, questionCount });
